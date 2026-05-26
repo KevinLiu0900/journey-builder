@@ -7,6 +7,7 @@ import {
   useSelectedFieldContext,
 } from "@/app/context";
 import {
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -21,6 +22,7 @@ import { AvantosType, FormProperties, FormType } from "@/types";
 import { AppSidebar } from "../sidebar";
 import { FormNodeType } from "../flows/form-node";
 import { toast } from "sonner";
+import { Button } from "../ui/button";
 
 type PrefillDialogProps = {
   forms: FormType[];
@@ -38,7 +40,7 @@ type ContentType = {
 
 function getSchemaProperties(
   form: FormType,
-  action?: ({ avantos_type, format, title, from }: ContentType) => void,
+  action?: ({ avantos_type, format, title, from, label }: ContentType) => void,
 ) {
   // parse the form properties to an array of {id, title, aventos_type, format}
   const formProperties = (form?.field_schema?.properties ||
@@ -259,7 +261,19 @@ export function PrefillDialog(props: PrefillDialogProps) {
           />
         </FieldGroup>
 
-        <DialogFooter className="px-4 mx-0.5"></DialogFooter>
+        <DialogFooter className="px-4 mx-0.5">
+          <DialogClose asChild>
+            <Button
+              variant="outline"
+              className="border-blue-400 text-blue-400! rounded-sm h-8"
+            >
+              Cancel
+            </Button>
+          </DialogClose>
+          <Button type="submit" className="h-8 rounded-sm">
+            Select
+          </Button>
+        </DialogFooter>
       </div>
     );
   }, [viewPrefill, dependencyNodes]);
