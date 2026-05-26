@@ -15,6 +15,7 @@ import DynamicRenderer from "./dynamic-renderer";
 import { AvantosType, FormProperties, FormType } from "@/types";
 import { AppSidebar } from "../sidebar";
 import { FormNodeType } from "../flows/form-node";
+import { toast } from "sonner";
 
 type PrefillDialogProps = {
   forms: FormType[];
@@ -29,13 +30,10 @@ type ContentType = {
   format?: "email";
 };
 
-type DropdownContentType = {
-  id: string;
-  group: string;
-  contents: ContentType[];
-};
-
-function getSchemaProperties(form: FormType, action?: () => void) {
+function getSchemaProperties(
+  form: FormType,
+  action?: ({ avantos_type, format, title }: ContentType) => void,
+) {
   // parse the form properties to an array of {id, title, aventos_type, format}
   const formProperties = (form?.field_schema?.properties ||
     {}) as FormProperties;
@@ -48,7 +46,7 @@ function getSchemaProperties(form: FormType, action?: () => void) {
       label: property.title,
       avantos_type: property.avantos_type,
       format: property.format,
-      action: () => console.log("Clicked on ", property.title),
+      action: () => action?.(property),
     }))
     // do not show button component has it can not be inherited
     .filter((property) => property.key?.toLowerCase() !== "button");
@@ -93,8 +91,29 @@ function getPrerequisites(
 
 export function PrefillDialog(props: PrefillDialogProps) {
   const selectedNode = useCurrentNode();
-  const { handleFieldClick } = useSelectedFieldContext();
+  const { handleFieldClick, selectedField } = useSelectedFieldContext();
   const [viewPrefill, setViewPrefill] = useState(true);
+
+  const handleActionClick = (action: ContentType) => {
+    const title = action.title?.replace(/ /g, "_").toLowerCase() || "";
+    const key = selectedField?.fieldKey?.replace(/ /g, "_").toLowerCase() || "";
+
+    // if the action avantos type or title matches the selected field key, trigger the action
+    if (action.avantos_type === key || title === key) {
+      // TODO: set the attached fields here
+      toast.success("Field mapped successfully!", {
+        position: "top-right",
+        className: "bg-green-700! text-white!",
+      });
+      return;
+    }
+
+    toast.error("Action not compatible types", {
+      description: `Invalid data type selected. It must be of type ${title}`,
+      position: "top-right",
+      className: "bg-destructive! text-white!",
+    });
+  };
 
   const formMap = useMemo(() => {
     const map: Record<string, FormType> = {};
@@ -111,7 +130,7 @@ export function PrefillDialog(props: PrefillDialogProps) {
     const nodes = getPrerequisites(selectedNode!, props.nodeMap, results);
     const data = Object.entries(nodes).map(([key, node]) => {
       const form = formMap[node.data?.component_id || ""];
-      const formProperties = getSchemaProperties(form);
+      const formProperties = getSchemaProperties(form, handleActionClick);
       return {
         node,
         form,
@@ -128,7 +147,7 @@ export function PrefillDialog(props: PrefillDialogProps) {
     );
 
     return uniqueData;
-  }, [selectedNode]);
+  }, [selectedNode, getSchemaProperties, handleActionClick]);
 
   const prefillComponent = useMemo(() => {
     const form = formMap[selectedNode?.data?.component_id || ""];
@@ -151,7 +170,7 @@ export function PrefillDialog(props: PrefillDialogProps) {
           <DialogDescription>Prefill fields for this form</DialogDescription>
         </DialogHeader>
         <FieldGroup id="prefill-fields">
-          {Object.entries(schemaProperties).map(([key, property]) => (
+          {schemaProperties.map((property) => (
             <DynamicRenderer
               key={property.id}
               type={property.avantos_type}
@@ -208,7 +227,7 @@ export function PrefillDialog(props: PrefillDialogProps) {
         <DialogFooter className="px-4 mx-0.5"></DialogFooter>
       </div>
     );
-  }, [viewPrefill]);
+  }, [viewPrefill, dependencyNodes]);
 
   // only render if the selected node is a form component
   if (selectedNode === null) return null;
