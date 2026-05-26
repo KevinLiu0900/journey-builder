@@ -118,4 +118,19 @@ export interface Notes {
   type: string;
 }
 
-export type AvantosType = "button" | "checkbox-group" | "object-enum" | "short-text" | "multi-select" | "multi-line-text";
+export type AvantosType =
+  | "button"
+  | "checkbox-group"
+  | "object-enum"
+  | "short-text"
+  | "multi-select"
+  | "multi-line-text";
+
+export type CurrentFormType = {
+  from: string; // label of the form inherited from
+  data: {
+    email?: string; 
+    object_enum?: string;
+    checkbox_group?: string;
+  };
+};

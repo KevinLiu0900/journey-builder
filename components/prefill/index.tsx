@@ -1,6 +1,11 @@
 "use client";
 
-import { useCurrentNode, useSelectedFieldContext } from "@/app/context";
+import {
+  useCurrentForm,
+  useCurrentNode,
+  useFormNode,
+  useSelectedFieldContext,
+} from "@/app/context";
 import {
   DialogContent,
   DialogDescription,
@@ -28,11 +33,12 @@ type ContentType = {
   label: string;
   avantos_type: AvantosType;
   format?: "email";
+  from: string;
 };
 
 function getSchemaProperties(
   form: FormType,
-  action?: ({ avantos_type, format, title }: ContentType) => void,
+  action?: ({ avantos_type, format, title, from }: ContentType) => void,
 ) {
   // parse the form properties to an array of {id, title, aventos_type, format}
   const formProperties = (form?.field_schema?.properties ||
@@ -46,7 +52,8 @@ function getSchemaProperties(
       label: property.title,
       avantos_type: property.avantos_type,
       format: property.format,
-      action: () => action?.(property),
+      from: form?.name,
+      action: () => action?.({ ...property, from: form?.name, title: key }),
     }))
     // do not show button component has it can not be inherited
     .filter((property) => property.key?.toLowerCase() !== "button");
@@ -89,9 +96,19 @@ function getPrerequisites(
   return updatedResults;
 }
 
+function getTypeAsLabel(type: string, title: string) {
+  if (type === "short-text") return title?.toLowerCase() || "";
+  if (type === "object_enum") return "dynamic_object";
+  if (type === "checkbox_group") return "checkbox_group";
+  if (type === "dynamic_checkbox_group") return "dynamic_checkbox_group";
+
+  return title?.toLowerCase() || "";
+}
+
 export function PrefillDialog(props: PrefillDialogProps) {
   const selectedNode = useCurrentNode();
   const { handleFieldClick, selectedField } = useSelectedFieldContext();
+  const { updateCurrentForm } = useCurrentForm();
   const [viewPrefill, setViewPrefill] = useState(true);
 
   const handleActionClick = (action: ContentType) => {
@@ -99,12 +116,30 @@ export function PrefillDialog(props: PrefillDialogProps) {
     const key = selectedField?.fieldKey?.replace(/ /g, "_").toLowerCase() || "";
 
     // if the action avantos type or title matches the selected field key, trigger the action
+
     if (action.avantos_type === key || title === key) {
       // TODO: set the attached fields here
-      toast.success("Field mapped successfully!", {
+      const formLabel =
+        action?.from
+          ?.split(" ")
+          .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+          .join(" ") || "";
+
+      const actionLabel = getTypeAsLabel(action.avantos_type, action.title);
+
+      updateCurrentForm({
+        from: formLabel,
+        data: {
+          [actionLabel]: `${actionLabel}: ${formLabel}.${action.title}`,
+        },
+      });
+
+      toast.success(`Successfully mapped data from form ${formLabel}!`, {
         position: "top-right",
         className: "bg-green-700! text-white!",
       });
+
+      setViewPrefill(true);
       return;
     }
 

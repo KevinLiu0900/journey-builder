@@ -186,7 +186,7 @@ function traverseNode(nodes: FormNodeType[], edges: Edge[] = []) {
 }
 
 function Flow(props: FlowProps) {
-  const { handleNodeClick, updateDependencies } = useFormNode();
+  const { handleNodeClick, updateDependencies, resetForm } = useFormNode();
   const _nodes = drawNodes(props.data.nodes, handleNodeClick);
 
   // TODO: Refactor to avoid traversing the nodes on every render
@@ -200,7 +200,7 @@ function Flow(props: FlowProps) {
 
   const resetSelectionOnClose = (open: boolean) => {
     if (!open) {
-      handleNodeClick(null);
+      resetForm();
     }
   };
 
