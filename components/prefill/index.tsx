@@ -18,6 +18,7 @@ import { FormNodeType } from "../flows/form-node";
 
 type PrefillDialogProps = {
   forms: FormType[];
+  nodeMap: Record<string, FormNodeType>;
 };
 
 type ContentType = {
@@ -34,14 +35,7 @@ type DropdownContentType = {
   contents: ContentType[];
 };
 
-function getSchemaProperties(
-  node: FormNodeType,
-  formMap?: Record<string, FormType>,
-  action?: () => void,
-) {
-  const formId = node?.data?.component_id;
-  const form = formMap?.[formId];
-
+function getSchemaProperties(form: FormType, action?: () => void) {
   // parse the form properties to an array of {id, title, aventos_type, format}
   const formProperties = (form?.field_schema?.properties ||
     {}) as FormProperties;
@@ -61,43 +55,84 @@ function getSchemaProperties(
 
   const title = form?.name || "Form";
 
-  return { title, properties, id: formId };
+  return { title, properties, id: form?.id };
 }
 
-function getUniqueContent(contents: DropdownContentType[]) {
-  const uniqueContents: Record<string, DropdownContentType> = {};
+function getPrerequisites(
+  node: FormNodeType | null,
+  nodeMap?: Record<string, FormNodeType>,
+  results: Record<string, FormNodeType> = {},
+): Record<string, FormNodeType> {
+  if (!node) return results;
 
-  contents.forEach((content) => {
-    if (!uniqueContents[content.id]) {
-      uniqueContents[content.id] = content;
+  const prerequisites = node.data?.prerequisites || [];
+
+  // if there are no prerequisites, return the current results
+  if (prerequisites.length === 0) return results;
+
+  const updatedResults = { ...results };
+
+  for (const prerequisite of prerequisites) {
+    const prerequisiteNode = nodeMap?.[prerequisite];
+    if (!prerequisiteNode) {
+      continue;
     }
-  });
-  return Object.values(uniqueContents);
+
+    updatedResults[prerequisite] = prerequisiteNode;
+    // Recursively get prerequisites and merge results
+    const nestedResults = getPrerequisites(
+      prerequisiteNode,
+      nodeMap,
+      updatedResults,
+    );
+    Object.assign(updatedResults, nestedResults);
+  }
+
+  return updatedResults;
 }
+
 export function PrefillDialog(props: PrefillDialogProps) {
   const selectedNode = useCurrentNode();
-  const { handleFieldClick, dependencyMap } = useSelectedFieldContext();
+  const { handleFieldClick } = useSelectedFieldContext();
   const [viewPrefill, setViewPrefill] = useState(true);
-
-  const inheritableNodes = dependencyMap?.[selectedNode?.id || ""] || {};
 
   const formMap = useMemo(() => {
     const map: Record<string, FormType> = {};
 
     props.forms.forEach((form: FormType) => {
-      if (form.id === selectedNode?.data?.component_id) {
-      }
       map[form.id] = form;
     });
 
     return map;
   }, [props.forms, selectedNode]);
 
-  const prefillComponent = useMemo(() => {
-    const { properties: schemaProperties } = getSchemaProperties(
-      selectedNode as FormNodeType,
-      formMap,
+  const dependencyNodes = useMemo(() => {
+    const results: Record<string, FormNodeType> = {};
+    const nodes = getPrerequisites(selectedNode!, props.nodeMap, results);
+    const data = Object.entries(nodes).map(([key, node]) => {
+      const form = formMap[node.data?.component_id || ""];
+      const formProperties = getSchemaProperties(form);
+      return {
+        node,
+        form,
+        properties: formProperties.properties,
+        title: formProperties.title,
+      };
+    });
+
+    // build unique data based on form id
+    // this ensures there is no duplicate forms in the explorer even if multiple nodes are dependent on the same form
+    const uniqueData = data.filter(
+      (value, index, self) =>
+        index === self.findIndex((t) => t.form?.id === value.form?.id),
     );
+
+    return uniqueData;
+  }, [selectedNode]);
+
+  const prefillComponent = useMemo(() => {
+    const form = formMap[selectedNode?.data?.component_id || ""];
+    const { properties: schemaProperties } = getSchemaProperties(form);
 
     if (!viewPrefill) return null;
 
@@ -137,17 +172,11 @@ export function PrefillDialog(props: PrefillDialogProps) {
   }, [viewPrefill, handleFieldClick]);
 
   const explorerComponent = useMemo(() => {
-    const inheritableForms = Object.values(inheritableNodes).map((node) =>
-      getSchemaProperties(node, formMap),
-    );
-    const contents = inheritableForms.map((form) => {
-      return {
-        id: form.id,
-        group: form.title,
-        contents: form.properties,
-      };
-    });
-    console.log("🚀 ~ PrefillDialog ~ contents:", contents);
+    const contents = dependencyNodes.map(({ form, properties, title }) => ({
+      id: form?.id || "",
+      group: title,
+      contents: properties,
+    }));
 
     if (viewPrefill) return null;
     return (
@@ -171,7 +200,7 @@ export function PrefillDialog(props: PrefillDialogProps) {
                 group: "Client Organization Properties",
                 contents: [],
               },
-              ...getUniqueContent(contents),
+              ...contents,
             ]}
           />
         </FieldGroup>
@@ -179,7 +208,7 @@ export function PrefillDialog(props: PrefillDialogProps) {
         <DialogFooter className="px-4 mx-0.5"></DialogFooter>
       </div>
     );
-  }, [viewPrefill, inheritableNodes]);
+  }, [viewPrefill]);
 
   // only render if the selected node is a form component
   if (selectedNode === null) return null;

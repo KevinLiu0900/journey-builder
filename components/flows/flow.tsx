@@ -157,8 +157,6 @@ function dependencyMap(nodeMap: Record<string, FormNodeType>) {
       }
     }
 
-    console.log(" PreqMap: ", preqMap);
-
     map[node.id] = preqMap;
   }
 
@@ -230,7 +228,10 @@ function Flow(props: FlowProps) {
         <Background />
       </ReactFlow>
 
-      <PrefillDialog forms={props.data.forms} />
+      <PrefillDialog
+        forms={props.data.forms}
+        nodeMap={traverseResult.nodeMap}
+      />
     </Dialog>
   );
 }
