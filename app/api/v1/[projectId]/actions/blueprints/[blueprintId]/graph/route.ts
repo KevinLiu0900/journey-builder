@@ -1,4 +1,5 @@
 import { readFileSync } from 'fs';
+import { join } from 'path';
 
 /**
  * GET endpoint to fetch blueprint graph data
@@ -6,7 +7,7 @@ import { readFileSync } from 'fs';
  */
 export async function GET(_req: Request) {
   try {
-    const filePath = 'graph.json';
+    const filePath = join(process.cwd(), 'graph.json');
 
     const fileContent = readFileSync(filePath, 'utf-8');
     const data = JSON.parse(fileContent);
