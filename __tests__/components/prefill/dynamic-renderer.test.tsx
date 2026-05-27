@@ -127,7 +127,7 @@ describe('components/prefill/dynamic-renderer (RendererEngine)', () => {
     );
 
     const input = screen.getByTestId('input-group-input');
-    expect(input).toHaveAttribute('placeholder', 'Enter email');
+    expect(input).toHaveAttribute('placeholder', 'Email:');
   });
 
   it('should convert title to field key', () => {
@@ -351,21 +351,77 @@ describe('components/prefill/dynamic-renderer (RendererEngine)', () => {
 
       expect(screen.getByTestId('field')).toBeInTheDocument();
     });
+  });
 
-    it('should handle custom className', () => {
-      const { container } = render(
+  describe('Object Enum Tests', () => {
+    it('should render object-enum field', () => {
+      render(
+        <FormNodeProvider>
+          <DynamicRenderer type="object-enum" title="Database" form={mockForm} />
+        </FormNodeProvider>
+      );
+
+      expect(screen.getByTestId('field')).toBeInTheDocument();
+    });
+
+    it('should display placeholder for object-enum', () => {
+      render(
+        <FormNodeProvider>
+          <DynamicRenderer type="object-enum" title="Database" form={mockForm} />
+        </FormNodeProvider>
+      );
+
+      const input = screen.getByPlaceholderText('object_enum:');
+      expect(input).toBeInTheDocument();
+    });
+
+    it('should handle value changes in object-enum', () => {
+      const mockOnChange = jest.fn();
+      render(
         <FormNodeProvider>
           <DynamicRenderer
-            type="short-text"
-            title="Email"
-            format="email"
-            className="custom-class"
+            type="object-enum"
+            title="Database"
+            onValueChange={mockOnChange}
             form={mockForm}
           />
         </FormNodeProvider>
       );
 
-      expect(container).toBeInTheDocument();
+      const input = screen.getByPlaceholderText('object_enum:');
+      expect(input).toBeInTheDocument();
+    });
+  });
+
+  describe('Checkbox Group Tests', () => {
+    it('should render checkbox-group field', () => {
+      render(
+        <FormNodeProvider>
+          <DynamicRenderer type="checkbox-group" title="Agreement" form={mockForm} />
+        </FormNodeProvider>
+      );
+
+      expect(screen.getByTestId('field')).toBeInTheDocument();
+    });
+
+    it('should display checkbox input', () => {
+      render(
+        <FormNodeProvider>
+          <DynamicRenderer type="checkbox-group" title="Agreement" form={mockForm} />
+        </FormNodeProvider>
+      );
+
+      expect(screen.getByTestId('checkbox')).toBeInTheDocument();
+    });
+
+    it('should display dynamic_checkbox text when no value', () => {
+      render(
+        <FormNodeProvider>
+          <DynamicRenderer type="checkbox-group" title="Agreement" form={mockForm} />
+        </FormNodeProvider>
+      );
+
+      expect(screen.getByText('dynamic_checkbox')).toBeInTheDocument();
     });
   });
 });

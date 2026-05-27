@@ -101,7 +101,7 @@ export default function RendererEngine(props: RendererEngineProps) {
     [props]
   );
 
-  const validation = useMemo(() => {
+  const _validation = useMemo(() => {
     return validateField(currentValue, props.format);
   }, [currentValue, props.format]);
 

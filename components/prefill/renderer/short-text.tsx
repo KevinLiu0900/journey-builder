@@ -20,9 +20,9 @@ type ShortTextInputProps = {
 
 export function ShortTextInput(props: ShortTextInputProps) {
   const inputType = props.format === 'email' ? 'email' : props.format === 'url' ? 'url' : 'text';
-  const formatLabel = props.format || 'text';
+  const placeholderText = props.name?.charAt(0).toUpperCase() + props.name.slice(1);
 
-  const validation = props?.validation;
+  //   const validation = props?.validation;
   const inherited = props?.inherited;
   const showLabel = props?.showLabel;
   const fieldKey = props?.title?.toLowerCase().replace(/ /g, '_') as keyof CurrentFormType['data'];
@@ -41,14 +41,14 @@ export function ShortTextInput(props: ShortTextInputProps) {
         <InputGroupInput
           name={props.name || fieldKey}
           type={inputType}
-          placeholder={`Enter ${formatLabel || 'text'}`}
+          placeholder={`${placeholderText}:`}
           defaultValue={props.currentValue}
           onClick={props.handleFieldFocus}
           onChange={e => props.handleValueChange?.(e.target.value)}
-          aria-invalid={!validation?.valid}
+          //   aria-invalid={!validation?.valid}
           className={cn(
-            'rounded-lg bg-zinc-50! focus-visible:bg-zinc-50!',
-            !validation?.valid && 'border-destructive focus-visible:ring-destructive/20'
+            'rounded-lg bg-zinc-50! focus-visible:bg-zinc-50!'
+            // !validation?.valid && 'border-destructive focus-visible:ring-destructive/20'
           )}
         />
 
@@ -65,9 +65,9 @@ export function ShortTextInput(props: ShortTextInputProps) {
           </InputGroupButton>
         )}
       </InputGroup>
-      {!validation?.valid && validation?.error && (
+      {/* {!validation?.valid && validation?.error && (
         <p className="text-sm text-destructive">{validation.error}</p>
-      )}
+      )} */}
     </Field>
   );
 }

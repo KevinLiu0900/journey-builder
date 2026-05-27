@@ -1,359 +1,215 @@
-/**
- * Tests for components/flows/graph.tsx
- * Note: Since GraphContent is an async server component, we test the utility functions
- * and mock the async behavior. Full integration testing would require testing at the
- * Next.js level.
- */
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import GraphContent from '@/components/flows/graph';
 
-describe('components/flows/graph.tsx - Utility Functions and Logic', () => {
-  // Mock environment variables
-  const originalEnv = process.env;
+// Mock the useFetch hook
+jest.mock('@/hooks/use-fetch', () => ({
+  useFetch: jest.fn(),
+}));
+
+// Mock the Flow component
+jest.mock('@/components/flows/flow', () => {
+  return function DummyFlow() {
+    return <div data-testid="flow-component">Flow Component</div>;
+  };
+});
+
+// Mock lucide-react icons
+jest.mock('lucide-react', () => ({
+  AlertCircle: () => <div data-testid="alert-icon">Alert</div>,
+  RotateCcw: () => <div data-testid="retry-icon">Retry</div>,
+  Loader2: () => <div data-testid="loader-icon">Loader</div>,
+}));
+
+import { useFetch } from '@/hooks/use-fetch';
+
+describe('components/flows/graph (GraphContent)', () => {
+  const mockGraphData = {
+    nodes: [{ id: 1, label: 'Node 1' }],
+    edges: [{ source: 1, target: 2 }],
+    forms: [],
+  };
 
   beforeEach(() => {
-    process.env = { ...originalEnv };
     jest.clearAllMocks();
-    global.fetch = jest.fn();
   });
 
-  afterEach(() => {
-    process.env = originalEnv;
-  });
-
-  describe('fetchGraphData utility', () => {
-    it('should construct correct API URL with environment variables', async () => {
-      process.env.NEXT_APP_URL = 'https://api.example.com';
-      process.env.NEXT_PUBLIC_PROJECT_ID = 'project-123';
-      process.env.NEXT_PUBLIC_BLUEPRINT_ID = 'blueprint-456';
-
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ nodes: [], edges: [], forms: [] }),
+  describe('loading state', () => {
+    it('should display loading indicator while fetching', () => {
+      (useFetch as jest.Mock).mockReturnValue({
+        data: null,
+        loading: true,
+        error: null,
+        retry: jest.fn(),
       });
 
-      // We test the URL construction logic
-      const expectedUrl =
-        'https://api.example.com/api/v1/project-123/actions/blueprints/blueprint-456/graph';
+      render(<GraphContent />);
 
-      // Verify the URL format is correct
-      const parts = expectedUrl.split('/');
-      expect(parts).toContain('api');
-      expect(parts).toContain('v1');
-      expect(parts).toContain('project-123');
-      expect(parts).toContain('blueprints');
-      expect(parts).toContain('blueprint-456');
+      expect(screen.getByTestId('loader-icon')).toBeInTheDocument();
+      expect(screen.getByText('Loading blueprint...')).toBeInTheDocument();
     });
 
-    it('should use default values when environment variables are not set', () => {
-      delete process.env.NEXT_APP_URL;
-      delete process.env.NEXT_PUBLIC_PROJECT_ID;
-      delete process.env.NEXT_PUBLIC_BLUEPRINT_ID;
-
-      const defaultUrl =
-        'http://localhost:3000/api/v1/project123/actions/blueprints/blueprint456/graph';
-
-      const parts = defaultUrl.split('/');
-      expect(parts).toContain('localhost:3000');
-      expect(parts).toContain('project123');
-      expect(parts).toContain('blueprint456');
-    });
-
-    it('should return null on network error', async () => {
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
-
-      // Simulate the error handling logic
-      const mockFetch = async () => {
-        try {
-          const response = await fetch('http://api.example.com');
-          return await response.json();
-        } catch (error) {
-          console.error('Failed to fetch graph data:', error);
-          return null;
-        }
-      };
-
-      const result = await mockFetch();
-      expect(result).toBeNull();
-    });
-
-    it('should return null when API returns non-ok status', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
+    it('should show spinner animation during loading', () => {
+      (useFetch as jest.Mock).mockReturnValue({
+        data: null,
+        loading: true,
+        error: null,
+        retry: jest.fn(),
       });
 
-      // Simulate the error handling logic
-      const mockFetch = async () => {
-        try {
-          const response = await fetch('http://api.example.com');
-          if (!response.ok) {
-            console.error('API request failed:', response.status, response.statusText);
-            return null;
-          }
-          return await response.json();
-        } catch (error) {
-          console.error('Failed to fetch graph data:', error);
-          return null;
-        }
-      };
+      render(<GraphContent />);
 
-      const result = await mockFetch();
-      expect(result).toBeNull();
-    });
-
-    it('should handle 404 error correctly', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-      });
-
-      const mockFetch = async () => {
-        const response = await fetch('http://api.example.com');
-        return response.ok ? await response.json() : null;
-      };
-
-      const result = await mockFetch();
-      expect(result).toBeNull();
-    });
-
-    it('should handle 401 unauthorized error correctly', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-        statusText: 'Unauthorized',
-      });
-
-      const mockFetch = async () => {
-        const response = await fetch('http://api.example.com');
-        return response.ok ? await response.json() : null;
-      };
-
-      const result = await mockFetch();
-      expect(result).toBeNull();
-    });
-
-    it('should parse JSON response correctly', async () => {
-      const mockData = {
-        nodes: [{ id: 'node-1', type: 'form', data: { name: 'Form 1' } }],
-        edges: [{ source: 'node-1', target: 'node-2' }],
-        forms: [],
-      };
-
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockData,
-      });
-
-      const mockFetch = async () => {
-        const response = await fetch('http://api.example.com');
-        return response.ok ? await response.json() : null;
-      };
-
-      const result = await mockFetch();
-      expect(result).toEqual(mockData);
-      expect(result?.nodes).toHaveLength(1);
-      expect(result?.edges).toHaveLength(1);
-    });
-
-    it('should handle empty graph data', async () => {
-      const emptyData = { nodes: [], edges: [], forms: [] };
-
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => emptyData,
-      });
-
-      const mockFetch = async () => {
-        const response = await fetch('http://api.example.com');
-        return response.ok ? await response.json() : null;
-      };
-
-      const result = await mockFetch();
-      expect(result).toEqual(emptyData);
-      expect(result?.nodes).toHaveLength(0);
-    });
-
-    it('should set correct cache headers for ISR', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ nodes: [], edges: [], forms: [] }),
-      });
-
-      // Simulate the fetch with ISR options
-      const mockFetchWithCache = async () => {
-        const response = await fetch('http://api.example.com', {
-          next: { revalidate: 3600 },
-        });
-        return response.ok ? await response.json() : null;
-      };
-
-      const result = await mockFetchWithCache();
-      expect(result).not.toBeNull();
-
-      // Verify fetch was called with correct options
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          next: { revalidate: 3600 },
-        })
-      );
+      const loader = screen.getByTestId('loader-icon').closest('div');
+      expect(loader).toBeTruthy();
     });
   });
 
-  describe('GraphContent component logic', () => {
-    it('should render loading error message on failed fetch', () => {
-      // The component should render a fallback UI when graphData is null
-      const errorUI = (
-        <div className="h-screen w-screen flex items-center justify-center border border-zinc-200 rounded-lg dark:border-zinc-800">
-          <p className="text-zinc-500 dark:text-zinc-400">
-            Failed to load graph data. Kindly refresh the page or try again later.
-          </p>
-        </div>
-      );
-
-      expect(errorUI).toBeTruthy();
-      expect(errorUI.props.children).toBeTruthy();
-    });
-
-    it('should handle multiple concurrent fetch requests', async () => {
-      const mockData = { nodes: [], edges: [], forms: [] };
-
-      (global.fetch as jest.Mock).mockResolvedValue({
-        ok: true,
-        json: async () => mockData,
+  describe('error state', () => {
+    it('should display error message when fetch fails', () => {
+      const errorMessage = 'Failed to connect to server';
+      (useFetch as jest.Mock).mockReturnValue({
+        data: null,
+        loading: false,
+        error: new Error(errorMessage),
+        retry: jest.fn(),
       });
 
-      const fetch1 = (async () => {
-        const res = await fetch('http://api.example.com');
-        return res.ok ? await res.json() : null;
-      })();
+      render(<GraphContent />);
 
-      const fetch2 = (async () => {
-        const res = await fetch('http://api.example.com');
-        return res.ok ? await res.json() : null;
-      })();
-
-      const [result1, result2] = await Promise.all([fetch1, fetch2]);
-
-      expect(result1).toEqual(mockData);
-      expect(result2).toEqual(mockData);
-      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(screen.getByTestId('alert-icon')).toBeInTheDocument();
+      expect(screen.getByText('Failed to load blueprint')).toBeInTheDocument();
+      expect(screen.getByText(errorMessage)).toBeInTheDocument();
     });
 
-    it('should handle timeout scenarios gracefully', async () => {
-      (global.fetch as jest.Mock).mockImplementationOnce(
-        () =>
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 100))
-      );
+    it('should show retry button on error', () => {
+      (useFetch as jest.Mock).mockReturnValue({
+        data: null,
+        loading: false,
+        error: new Error('Network error'),
+        retry: jest.fn(),
+      });
 
-      const mockFetch = async () => {
-        try {
-          const response = await fetch('http://api.example.com');
-          return response.ok ? await response.json() : null;
-        } catch (error) {
-          console.error('Failed to fetch graph data:', error);
-          return null;
-        }
-      };
+      render(<GraphContent />);
 
-      const result = await mockFetch();
-      expect(result).toBeNull();
+      const retryButton = screen.getByRole('button', { name: /retry/i });
+      expect(retryButton).toBeInTheDocument();
+      expect(retryButton).not.toBeDisabled();
+    });
+
+    it('should show refresh page button on error', () => {
+      (useFetch as jest.Mock).mockReturnValue({
+        data: null,
+        loading: false,
+        error: new Error('Network error'),
+        retry: jest.fn(),
+      });
+
+      render(<GraphContent />);
+
+      const refreshButton = screen.getByRole('button', { name: /refresh page/i });
+      expect(refreshButton).toBeInTheDocument();
+    });
+
+    it('should call retry function when retry button is clicked', () => {
+      const mockRetry = jest.fn();
+      (useFetch as jest.Mock).mockReturnValue({
+        data: null,
+        loading: false,
+        error: new Error('Network error'),
+        retry: mockRetry,
+      });
+
+      render(<GraphContent />);
+
+      const retryButton = screen.getByRole('button', { name: /retry/i });
+      fireEvent.click(retryButton);
+
+      expect(mockRetry).toHaveBeenCalled();
+    });
+
+    it('should show HTTP error details', () => {
+      (useFetch as jest.Mock).mockReturnValue({
+        data: null,
+        loading: false,
+        error: new Error('HTTP 500: Internal Server Error'),
+        retry: jest.fn(),
+      });
+
+      render(<GraphContent />);
+
+      expect(screen.getByText('HTTP 500: Internal Server Error')).toBeInTheDocument();
     });
   });
 
-  describe('Component rendering validation', () => {
-    it('should have correct CSS classes for layout', () => {
-      const layoutClasses = 'h-screen w-screen scale-95';
-      const errorClasses =
-        'h-screen w-screen flex items-center justify-center border border-zinc-200 rounded-lg dark:border-zinc-800';
+  describe('empty state', () => {
+    it('should display empty state when data is null after loading', () => {
+      (useFetch as jest.Mock).mockReturnValue({
+        data: null,
+        loading: false,
+        error: null,
+        retry: jest.fn(),
+      });
 
-      // Verify classes are properly formatted
-      expect(layoutClasses).toContain('h-screen');
-      expect(layoutClasses).toContain('w-screen');
-      expect(errorClasses).toContain('flex');
-      expect(errorClasses).toContain('items-center');
+      render(<GraphContent />);
+
+      expect(screen.getByText('No blueprint data')).toBeInTheDocument();
+      expect(screen.getByText(/blueprint data is empty/i)).toBeInTheDocument();
     });
 
-    it('should have accessible error message', () => {
-      const errorMessage = 'Failed to load graph data. Kindly refresh the page or try again later.';
+    it('should show refresh button in empty state', () => {
+      (useFetch as jest.Mock).mockReturnValue({
+        data: null,
+        loading: false,
+        error: null,
+        retry: jest.fn(),
+      });
 
-      expect(errorMessage.length).toBeGreaterThan(0);
-      expect(errorMessage).toContain('Failed');
-      expect(errorMessage).toContain('refresh');
+      render(<GraphContent />);
+
+      const refreshButton = screen.getByRole('button', { name: /refresh page/i });
+      expect(refreshButton).toBeInTheDocument();
     });
   });
 
-  describe('Edge case handling', () => {
-    it('should handle malformed JSON response', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => {
-          throw new Error('Invalid JSON');
-        },
+  describe('success state', () => {
+    it('should render Flow component when data is available', () => {
+      (useFetch as jest.Mock).mockReturnValue({
+        data: mockGraphData,
+        loading: false,
+        error: null,
+        retry: jest.fn(),
       });
 
-      const mockFetch = async () => {
-        try {
-          const response = await fetch('http://api.example.com');
-          return response.ok ? await response.json() : null;
-        } catch (error) {
-          return null;
-        }
-      };
+      render(<GraphContent />);
 
-      const result = await mockFetch();
-      expect(result).toBeNull();
+      expect(screen.getByTestId('flow-component')).toBeInTheDocument();
     });
 
-    it('should handle extremely large responses', async () => {
-      const largeData = {
-        nodes: Array.from({ length: 10000 }, (_, i) => ({
-          id: `node-${i}`,
-          type: 'form',
-          data: { name: `Form ${i}` },
-        })),
-        edges: Array.from({ length: 9999 }, (_, i) => ({
-          source: `node-${i}`,
-          target: `node-${i + 1}`,
-        })),
-        forms: [],
-      };
-
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => largeData,
+    it('should not show loading or error states when successful', () => {
+      (useFetch as jest.Mock).mockReturnValue({
+        data: mockGraphData,
+        loading: false,
+        error: null,
+        retry: jest.fn(),
       });
 
-      const mockFetch = async () => {
-        const response = await fetch('http://api.example.com');
-        return response.ok ? await response.json() : null;
-      };
+      render(<GraphContent />);
 
-      const result = await mockFetch();
-      expect(result?.nodes).toHaveLength(10000);
+      expect(screen.queryByTestId('loader-icon')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('alert-icon')).not.toBeInTheDocument();
     });
 
-    it('should handle null nodes or edges in response', async () => {
-      const dataWithNull = {
-        nodes: null,
-        edges: null,
-        forms: [],
-      };
-
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => dataWithNull,
+    it('should apply correct styling to success container', () => {
+      (useFetch as jest.Mock).mockReturnValue({
+        data: mockGraphData,
+        loading: false,
+        error: null,
+        retry: jest.fn(),
       });
 
-      const mockFetch = async () => {
-        const response = await fetch('http://api.example.com');
-        const data = response.ok ? await response.json() : null;
-        return data && data.nodes && data.edges ? data : null;
-      };
+      const { container } = render(<GraphContent />);
 
-      const result = await mockFetch();
-      expect(result).toBeNull();
+      const flowDiv = container.querySelector('.scale-95');
+      expect(flowDiv).toBeInTheDocument();
     });
   });
 });
