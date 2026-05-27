@@ -3,8 +3,6 @@ import { Form } from "lucide-react";
 import { Button } from "../ui/button";
 import { DialogTrigger } from "../ui/dialog";
 
-interface InputMapping {}
-
 interface SlaDuration {
   number: number;
   unit: string;
@@ -18,7 +16,7 @@ export type FormNodeData = {
   name: string;
   prerequisites: string[];
   permitted_roles: string[];
-  input_mapping: InputMapping;
+  input_mapping: Record<string, string>;
   sla_duration: SlaDuration;
   approval_required: boolean;
   approval_roles: string[];

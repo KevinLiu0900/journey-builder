@@ -10,85 +10,17 @@ import {
   type Node,
 } from "@xyflow/react";
 
-// @ts-ignore
 import "@xyflow/react/dist/style.css";
 
-import FormNode, {
-  Edge,
-  FormNodeProps,
-  FormNodeType,
-} from "@/components/flows/form-node";
+import FormNode, { Edge, FormNodeType } from "@/components/flows/form-node";
 import { useFormNode } from "@/app/context";
 import { Dialog } from "../ui/dialog";
 import { PrefillDialog } from "../prefill";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 
 const nodeTypes: NodeTypes = {
   formNodeType: FormNode,
 };
-const initialNodes: Node[] = [
-  {
-    id: "form-a",
-    type: "formNodeType",
-    data: { name: "Form A", onClick: () => alert("Form A clicked") },
-    position: { x: 100, y: 250 },
-  },
-  {
-    id: "form-b",
-    type: "formNodeType",
-    data: { name: "Form B", onClick: () => alert("Form B clicked") },
-    position: { x: 300, y: 150 },
-  },
-  {
-    id: "form-c",
-    type: "formNodeType",
-    data: { name: "Form C", onClick: () => alert("Form C clicked") },
-    position: { x: 300, y: 350 },
-  },
-  {
-    id: "form-d",
-    type: "formNodeType",
-    data: { name: "Form D", onClick: () => alert("Form D clicked") },
-    position: { x: 500, y: 150 },
-  },
-  {
-    id: "form-e",
-    type: "formNodeType",
-    data: { name: "Form E", onClick: () => alert("Form E clicked") },
-    position: { x: 500, y: 350 },
-  },
-];
-
-const initialEdges = [
-  {
-    id: "ea-b",
-    source: "form-a",
-    sourceHandle: "a",
-    target: "form-b",
-    targetHandle: "c",
-  },
-  {
-    id: "ea-c",
-    source: "form-a",
-    sourceHandle: "a",
-    target: "form-c",
-    targetHandle: "c",
-  },
-  {
-    id: "eb-d",
-    source: "form-b",
-    sourceHandle: "a",
-    target: "form-d",
-    targetHandle: "c",
-  },
-  {
-    id: "ec-e",
-    source: "form-c",
-    sourceHandle: "a",
-    target: "form-e",
-    targetHandle: "c",
-  },
-];
 
 type FlowProps = {
   data: {
@@ -191,11 +123,11 @@ function Flow(props: FlowProps) {
 
   // TODO: Refactor to avoid traversing the nodes on every render
   const traverseResult = traverseNode(props.data.nodes, props.data.edges);
-  const [nodes, _setNodes, onNodesChange] = useNodesState(
-    _nodes || initialNodes,
-  );
+  // @ts-ignore-next-line
+  const [nodes, _setNodes, onNodesChange] = useNodesState(_nodes || []);
+  // @ts-ignore-next-line
   const [edges, _setEdges, onEdgesChange] = useEdgesState(
-    traverseResult.edges || initialEdges,
+    traverseResult.edges || [],
   );
 
   const resetSelectionOnClose = (open: boolean) => {
@@ -204,11 +136,15 @@ function Flow(props: FlowProps) {
     }
   };
 
-  useEffect(() => {
+  const updateDependenciesCallback = useCallback(() => {
     if (Object.keys(traverseResult.nodeMap).length > 0) {
       updateDependencies(dependencyMap(traverseResult.nodeMap));
     }
-  }, []);
+  }, [traverseResult.nodeMap, updateDependencies]);
+
+  useEffect(() => {
+    updateDependenciesCallback();
+  }, []); // Run once on mount to set initial dependencies
 
   return (
     <Dialog onOpenChange={resetSelectionOnClose}>

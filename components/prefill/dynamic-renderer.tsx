@@ -1,3 +1,5 @@
+"use client";
+
 import { AvantosType, CurrentFormType } from "@/types";
 import { X as CloseIcon, Database } from "lucide-react";
 import { Button } from "../ui/button";

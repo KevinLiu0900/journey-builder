@@ -6,16 +6,21 @@ import type { FormNodeType } from "@/components/flows/form-node";
 import { CurrentFormType, FormType } from "@/types";
 
 type DependencyMapType = Record<string, Record<string, FormNodeType>> | null;
+type AttachedFieldType = { formName: string; fieldLabel: string } | null;
+type SelectedFieldType = {
+  from: string;
+  fieldKey: string;
+  form: FormType | null;
+} | null;
 
 const context = createContext<{
   currentForm: CurrentFormType | null;
   dependencyMap: DependencyMapType;
   currentNode: FormNodeType | null;
-  selectedField: {
-    fieldKey: string;
-    form: FormType | null;
-  };
+  attachedField: AttachedFieldType;
+  selectedField: SelectedFieldType;
   handleNodeClick: (node: FormNodeType | null) => void;
+  handleAttachFieldClick: (field: AttachedFieldType) => void;
   handleFieldClick: (fieldKey: string, form: FormType | null) => void;
   updateDependencies: (map: DependencyMapType) => void;
   updateCurrentForm: (form: CurrentFormType | null) => void;
@@ -25,11 +30,10 @@ const context = createContext<{
   currentForm: null,
   currentNode: null,
   dependencyMap: null,
-  selectedField: {
-    fieldKey: "",
-    form: null,
-  },
+  attachedField: null,
+  selectedField: null,
   handleNodeClick: () => {},
+  handleAttachFieldClick: () => {},
   handleFieldClick: () => {},
   updateDependencies: () => {},
   updateCurrentForm: () => {},
@@ -45,16 +49,18 @@ export const FormNodeProvider = ({
   const [currentForm, setCurrentForm] = useState<CurrentFormType | null>(null);
   const [currentNode, setCurrentNode] = useState<FormNodeType | null>(null);
   const [dependencyMap, setDependencyMap] = useState<DependencyMapType>(null);
-  const [selectedField, setSelectedField] = useState<{
-    fieldKey: string;
-    form: FormType | null;
-  }>({ fieldKey: "", form: null });
+  const [attachedField, setAttachedField] = useState<AttachedFieldType>(null);
+  const [selectedField, setSelectedField] = useState<SelectedFieldType>(null);
 
   function handleNodeClick(node: FormNodeType | null) {
     setCurrentNode(node);
   }
+  function handleAttachFieldClick(field: AttachedFieldType) {
+    setAttachedField(field);
+  }
   function handleFieldClick(fieldKey: string, form: FormType | null) {
     setSelectedField({
+      from: form?.name || "",
       fieldKey,
       form,
     });
@@ -80,12 +86,13 @@ export const FormNodeProvider = ({
   function resetForm() {
     setCurrentForm(null);
     setCurrentNode(null);
-    setSelectedField({ fieldKey: "", form: null });
+    setSelectedField(null);
   }
 
   return (
     <context.Provider
       value={{
+        attachedField,
         currentForm,
         currentNode,
         dependencyMap,
@@ -96,6 +103,7 @@ export const FormNodeProvider = ({
         updateCurrentForm,
         resetForm,
         clearField,
+        handleAttachFieldClick,
       }}
     >
       {children}
@@ -108,6 +116,20 @@ export const useSelectedFieldContext = () => {
   const { dependencyMap, selectedField, handleFieldClick } =
     useContext(context);
   return { dependencyMap, selectedField, handleFieldClick };
+};
+export const useAttachFieldContext = () => {
+  const {
+    attachedField,
+    selectedField,
+    handleAttachFieldClick,
+    handleFieldClick,
+  } = useContext(context);
+  return {
+    attachedField,
+    selectedField,
+    handleAttachFieldClick,
+    handleFieldClick,
+  };
 };
 export const useCurrentForm = () => {
   const { currentForm, clearField, updateCurrentForm } = useContext(context);

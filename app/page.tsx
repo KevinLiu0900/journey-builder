@@ -1,18 +1,20 @@
-import Flow from "@/components/flows/flow";
+import { GraphContent } from "@/components/flows";
+import { Suspense } from "react";
 
-export default async function Home() {
-  const response = await fetch(
-    "http://localhost:3000/api/v1/project123/actions/blueprints/blueprint456/graph",
-  );
-  const data = await response.json();
-
+export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center  font-sans dark:bg-black">
-      <main className="text-3xl bg-zinc-50 min-h-screen">
-        <section className="h-screen w-screen border-2 border-zinc-50 rounded-lg">
-          <Flow data={data} />
-        </section>
-      </main>
-    </div>
+    <main className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 font-sans dark:bg-black">
+      <section className="w-full max-w-7xl px-4">
+        <Suspense
+          fallback={
+            <div className="text-center text-zinc-500">
+              Loading blueprint...
+            </div>
+          }
+        >
+          <GraphContent />
+        </Suspense>
+      </section>
+    </main>
   );
 }

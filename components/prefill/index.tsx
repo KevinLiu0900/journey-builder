@@ -1,9 +1,9 @@
 "use client";
 
 import {
+  useAttachFieldContext,
   useCurrentForm,
   useCurrentNode,
-  useFormNode,
   useSelectedFieldContext,
 } from "@/app/context";
 import {
@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { Switch } from "../ui/switch";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import DynamicRenderer from "./dynamic-renderer";
 import { AvantosType, FormProperties, FormType } from "@/types";
 import { AppSidebar } from "../sidebar";
@@ -24,270 +24,367 @@ import { FormNodeType } from "../flows/form-node";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 
+// Constants
+const EXCLUDED_COMPONENTS = ["button"];
+const COMPONENT_TYPE_MAPPING: Record<string, string> = {
+  "short-text": "short_text",
+  object_enum: "dynamic_object",
+  checkbox_group: "checkbox_group",
+  dynamic_checkbox_group: "dynamic_checkbox_group",
+};
+
+// Types
 type PrefillDialogProps = {
   forms: FormType[];
   nodeMap: Record<string, FormNodeType>;
 };
 
-type ContentType = {
+type PropertyContent = {
   id: string;
+  key: string;
   title: string;
   label: string;
   avantos_type: AvantosType;
-  format?: "email";
+  format?: string;
   from: string;
 };
 
-function getSchemaProperties(
-  form: FormType,
-  action?: ({ avantos_type, format, title, from, label }: ContentType) => void,
-) {
-  // parse the form properties to an array of {id, title, aventos_type, format}
-  const formProperties = (form?.field_schema?.properties ||
+type DependencyNodeData = {
+  node: FormNodeType;
+  form: FormType;
+  properties: PropertyContent[];
+  title: string;
+};
+
+// Utility Functions
+/**
+ * Extract form properties and convert to PropertyContent array
+ */
+function extractFormProperties(
+  form: FormType | undefined,
+  action?: (property: PropertyContent) => void,
+): PropertyContent[] {
+  if (!form) return [];
+
+  const formProperties = (form.field_schema?.properties ||
     {}) as FormProperties;
 
-  const properties: ContentType[] = Object.entries(formProperties)
+  return Object.entries(formProperties)
     .map(([key, property]) => ({
-      id: form?.id + "_" + key,
-      key: key,
-      title: property.title,
-      label: property.title,
+      id: `${form.id}_${key}`,
+      key,
+      title: property.title || key,
+      label: property.title || key,
       avantos_type: property.avantos_type,
       format: property.format,
-      from: form?.name,
+      from: form.name || "Form",
       action: () => action?.({ ...property, from: form?.name, title: key }),
     }))
-    // do not show button component has it can not be inherited
-    .filter((property) => property.key?.toLowerCase() !== "button");
-
-  const title = form?.name || "Form";
-
-  return { title, properties, id: form?.id };
+    .filter(
+      (property) => !EXCLUDED_COMPONENTS.includes(property.key.toLowerCase()),
+    );
 }
 
-function getPrerequisites(
+/**
+ * Map avantos type to field label format
+ */
+function getFieldLabelFromType(type: AvantosType, fallback: string): string {
+  return (
+    COMPONENT_TYPE_MAPPING[type as keyof typeof COMPONENT_TYPE_MAPPING] ||
+    fallback.toLowerCase()
+  );
+}
+
+/**
+ * Recursively get all prerequisite nodes
+ */
+function collectPrerequisiteNodes(
   node: FormNodeType | null,
-  nodeMap?: Record<string, FormNodeType>,
-  results: Record<string, FormNodeType> = {},
+  nodeMap: Record<string, FormNodeType>,
+  collected: Record<string, FormNodeType> = {},
 ): Record<string, FormNodeType> {
-  if (!node) return results;
+  if (!node?.data?.prerequisites) return collected;
 
-  const prerequisites = node.data?.prerequisites || [];
+  const updated = { ...collected };
 
-  // if there are no prerequisites, return the current results
-  if (prerequisites.length === 0) return results;
+  for (const prereqId of node.data.prerequisites) {
+    const prereqNode = nodeMap[prereqId];
+    if (!prereqNode || prereqId in updated) continue;
 
-  const updatedResults = { ...results };
-
-  for (const prerequisite of prerequisites) {
-    const prerequisiteNode = nodeMap?.[prerequisite];
-    if (!prerequisiteNode) {
-      continue;
-    }
-
-    updatedResults[prerequisite] = prerequisiteNode;
-    // Recursively get prerequisites and merge results
-    const nestedResults = getPrerequisites(
-      prerequisiteNode,
-      nodeMap,
-      updatedResults,
+    updated[prereqId] = prereqNode;
+    // Recursively collect nested prerequisites
+    Object.assign(
+      updated,
+      collectPrerequisiteNodes(prereqNode, nodeMap, updated),
     );
-    Object.assign(updatedResults, nestedResults);
   }
 
-  return updatedResults;
+  return updated;
 }
 
-function getTypeAsLabel(type: string, title: string) {
-  if (type === "short-text") return title?.toLowerCase() || "";
-  if (type === "object_enum") return "dynamic_object";
-  if (type === "checkbox_group") return "checkbox_group";
-  if (type === "dynamic_checkbox_group") return "dynamic_checkbox_group";
-
-  return title?.toLowerCase() || "";
+/**
+ * Create form lookup map for efficient access
+ */
+function createFormMap(forms: FormType[]): Record<string, FormType> {
+  return forms.reduce(
+    (acc, form) => {
+      acc[form.id] = form;
+      return acc;
+    },
+    {} as Record<string, FormType>,
+  );
 }
 
-export function PrefillDialog(props: PrefillDialogProps) {
-  const selectedNode = useCurrentNode();
-  const { handleFieldClick, selectedField } = useSelectedFieldContext();
+// Sub-components
+function PrefillView({
+  selectedNode,
+  formMap,
+  onFieldClick,
+}: {
+  selectedNode: FormNodeType;
+  formMap: Record<string, FormType>;
+  onFieldClick: (title: string, form: FormType) => void;
+}) {
+  const form = formMap[selectedNode?.data?.component_id || ""];
+  const { handleAttachFieldClick, handleFieldClick } = useAttachFieldContext();
+  const handleAction = useCallback(
+    (property: PropertyContent) => {
+      handleAttachFieldClick({
+        fieldLabel: property.title,
+        formName: property.from,
+      });
+
+      handleFieldClick(property.title, form);
+    },
+    [form, handleFieldClick, handleAttachFieldClick],
+  );
+  const properties = useMemo(
+    () => extractFormProperties(form, handleAction),
+    [form],
+  );
+
+  return (
+    <div className="p-4">
+      <DialogHeader>
+        <DialogTitle>Prefill</DialogTitle>
+        <DialogDescription>Prefill fields for this form</DialogDescription>
+      </DialogHeader>
+      <FieldGroup id="prefill-fields">
+        {properties.map((property) => (
+          <DynamicRenderer
+            key={property.id}
+            type={property.avantos_type}
+            title={property.title}
+            format={property.format as "email" | undefined}
+            onChange={() => onFieldClick(property.title, form)}
+          />
+        ))}
+      </FieldGroup>
+    </div>
+  );
+}
+
+function ExplorerView({
+  dependencyNodes,
+  clearUp,
+}: {
+  dependencyNodes: DependencyNodeData[];
+  clearUp?: () => void;
+}) {
   const { updateCurrentForm } = useCurrentForm();
-  const [viewPrefill, setViewPrefill] = useState(true);
+  const { attachedField, selectedField } = useAttachFieldContext();
 
-  const handleActionClick = (action: ContentType) => {
-    const title = action.title?.replace(/ /g, "_").toLowerCase() || "";
-    const key = selectedField?.fieldKey?.replace(/ /g, "_").toLowerCase() || "";
+  const onSubmit = useCallback(
+    (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      const from = attachedField?.formName || "";
+      const key = attachedField?.fieldLabel || selectedField?.fieldKey || "";
+      const value = `${attachedField?.fieldLabel}: ${attachedField?.formName}.${key}`;
 
-    // if the action avantos type or title matches the selected field key, trigger the action
-
-    if (action.avantos_type === key || title === key) {
-      // TODO: set the attached fields here
-      const formLabel =
-        action?.from
-          ?.split(" ")
-          .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-          .join(" ") || "";
-
-      const actionLabel = getTypeAsLabel(action.avantos_type, action.title);
+      if (!attachedField) {
+        toast.error("No field selected", {
+          position: "top-right",
+          className: "bg-destructive! text-white!",
+        });
+        return;
+      }
 
       updateCurrentForm({
-        from: formLabel,
+        from,
         data: {
-          [actionLabel]: `${actionLabel}: ${formLabel}.${action.title}`,
+          [key]: value,
         },
       });
 
-      toast.success(`Successfully mapped data from form ${formLabel}!`, {
+      toast.success(`Mapped field from ${attachedField?.formName}`, {
         position: "top-right",
         className: "bg-green-700! text-white!",
       });
 
-      setViewPrefill(true);
-      return;
-    }
+      clearUp?.();
+    },
+    [updateCurrentForm, clearUp, attachedField, selectedField],
+  );
 
-    toast.error("Action not compatible types", {
-      description: `Invalid data type selected. It must be of type ${title}`,
-      position: "top-right",
-      className: "bg-destructive! text-white!",
-    });
-  };
+  const sidebarData = useMemo(
+    () => [
+      {
+        id: "action_properties",
+        group: "Action Properties",
+        contents: [],
+      },
+      {
+        id: "client_organization_properties",
+        group: "Client Organization Properties",
+        contents: [],
+      },
+      ...dependencyNodes.map(({ form, properties, title }) => ({
+        id: form?.id || "",
+        group: title,
+        contents: properties,
+      })),
+    ],
+    [dependencyNodes],
+  );
 
-  const formMap = useMemo(() => {
-    const map: Record<string, FormType> = {};
+  return (
+    <form onSubmit={onSubmit} className="py-4">
+      <DialogHeader>
+        <DialogTitle className="px-2.5 pb-1">
+          Select data element to map
+        </DialogTitle>
+      </DialogHeader>
 
-    props.forms.forEach((form: FormType) => {
-      map[form.id] = form;
-    });
+      <FieldGroup className="min-h-50 px-4 gap-1 items-start max-w-sm bg-zinc-50/50">
+        <AppSidebar data={sidebarData} />
+      </FieldGroup>
 
-    return map;
-  }, [props.forms, selectedNode]);
-
-  const dependencyNodes = useMemo(() => {
-    const results: Record<string, FormNodeType> = {};
-    const nodes = getPrerequisites(selectedNode!, props.nodeMap, results);
-    const data = Object.entries(nodes).map(([key, node]) => {
-      const form = formMap[node.data?.component_id || ""];
-      const formProperties = getSchemaProperties(form, handleActionClick);
-      return {
-        node,
-        form,
-        properties: formProperties.properties,
-        title: formProperties.title,
-      };
-    });
-
-    // build unique data based on form id
-    // this ensures there is no duplicate forms in the explorer even if multiple nodes are dependent on the same form
-    const uniqueData = data.filter(
-      (value, index, self) =>
-        index === self.findIndex((t) => t.form?.id === value.form?.id),
-    );
-
-    return uniqueData;
-  }, [selectedNode, getSchemaProperties, handleActionClick]);
-
-  const prefillComponent = useMemo(() => {
-    const form = formMap[selectedNode?.data?.component_id || ""];
-    const { properties: schemaProperties } = getSchemaProperties(form);
-
-    if (!viewPrefill) return null;
-
-    return (
-      <div className="p-4">
-        <DialogHeader>
-          <div className="flex justify-between align-center">
-            <DialogTitle>Prefill</DialogTitle>
-            <Switch
-              id="switch-prefill"
-              defaultChecked={viewPrefill}
-              checked={viewPrefill}
-              onCheckedChange={setViewPrefill}
-            />
-          </div>
-          <DialogDescription>Prefill fields for this form</DialogDescription>
-        </DialogHeader>
-        <FieldGroup id="prefill-fields">
-          {schemaProperties.map((property) => (
-            <DynamicRenderer
-              key={property.id}
-              type={property.avantos_type}
-              title={property.title}
-              format={property.format}
-              onChange={() => {
-                handleFieldClick(
-                  property.title,
-                  selectedNode as unknown as FormType,
-                );
-                setViewPrefill(false);
-              }}
-            />
-          ))}
-        </FieldGroup>
-      </div>
-    );
-  }, [viewPrefill, handleFieldClick]);
-
-  const explorerComponent = useMemo(() => {
-    const contents = dependencyNodes.map(({ form, properties, title }) => ({
-      id: form?.id || "",
-      group: title,
-      contents: properties,
-    }));
-
-    if (viewPrefill) return null;
-    return (
-      <div className="py-4">
-        <DialogHeader>
-          <DialogTitle className="px-2.5 pb-1">
-            Select data element to map
-          </DialogTitle>
-        </DialogHeader>
-
-        <FieldGroup className="min-h-50 px-4 gap-1 items-start max-w-sm bg-zinc-50/50">
-          <AppSidebar
-            data={[
-              {
-                id: "action_properties",
-                group: "Action Properties",
-                contents: [],
-              },
-              {
-                id: "client_organization_properties",
-                group: "Client Organization Properties",
-                contents: [],
-              },
-              ...contents,
-            ]}
-          />
-        </FieldGroup>
-
-        <DialogFooter className="px-4 mx-0.5">
-          <DialogClose asChild>
-            <Button
-              variant="outline"
-              className="border-blue-400 text-blue-400! rounded-sm h-8"
-            >
-              Cancel
-            </Button>
-          </DialogClose>
-          <Button type="submit" className="h-8 rounded-sm">
-            Select
+      <DialogFooter className="px-4 mx-0.5">
+        <DialogClose asChild>
+          <Button
+            variant="outline"
+            className="border-blue-400 text-blue-400! rounded-sm h-8"
+          >
+            Cancel
           </Button>
-        </DialogFooter>
-      </div>
-    );
-  }, [viewPrefill, dependencyNodes]);
+        </DialogClose>
+        <Button type="submit" className="h-8 rounded-sm">
+          Select
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+}
 
-  // only render if the selected node is a form component
-  if (selectedNode === null) return null;
+// Main Component
+export function PrefillDialog(props: PrefillDialogProps) {
+  const selectedNode = useCurrentNode();
+  const { handleFieldClick, selectedField } = useSelectedFieldContext();
+  const { handleAttachFieldClick } = useAttachFieldContext();
+  const { updateCurrentForm } = useCurrentForm();
+  const [viewPrefill, setViewPrefill] = useState(true);
+
+  const onSubmitClearUp = useCallback(() => {
+    console.log("Clearing up after submit...");
+    setViewPrefill(true);
+    handleAttachFieldClick(null);
+  }, [setViewPrefill, handleAttachFieldClick]);
+
+  const formMap = useMemo(() => createFormMap(props.forms), [props.forms]);
+
+  const handlePropertyClick = useCallback(
+    (property: PropertyContent) => {
+      if (!selectedField) {
+        toast.error("No field selected", {
+          position: "top-right",
+        });
+        return;
+      }
+
+      const selectedFieldKey =
+        selectedField.fieldKey?.toLowerCase().replace(/ /g, "_") || "";
+      const propertyKey = property.title.toLowerCase().replace(/ /g, "_");
+      const typesMatch =
+        property.avantos_type === selectedFieldKey ||
+        propertyKey === selectedFieldKey;
+
+      if (!typesMatch) {
+        toast.error("Type mismatch", {
+          description: `Field requires type ${selectedFieldKey}, got ${property.avantos_type}`,
+          position: "top-right",
+          className: "bg-destructive! text-white!",
+        });
+        return;
+      }
+
+      handleAttachFieldClick({
+        fieldLabel: property.title,
+        formName: property.from,
+      });
+    },
+    [selectedField, updateCurrentForm, setViewPrefill],
+  );
+
+  const dependencyNodes = useMemo<DependencyNodeData[]>(() => {
+    if (!selectedNode) return [];
+
+    const prerequisites = collectPrerequisiteNodes(selectedNode, props.nodeMap);
+    const nodes = Object.values(prerequisites);
+
+    // Build unique data, filtering duplicates by form ID
+    const uniqueNodes = new Map<string, DependencyNodeData>();
+
+    nodes.forEach((node) => {
+      const form = formMap[node.data?.component_id || ""];
+      if (!form) return;
+
+      if (!uniqueNodes.has(form.id)) {
+        uniqueNodes.set(form.id, {
+          node,
+          form,
+          properties: extractFormProperties(form, handlePropertyClick),
+          title: form.name || "Form",
+        });
+      }
+    });
+
+    return Array.from(uniqueNodes.values());
+  }, [selectedNode, props.nodeMap, formMap]);
+
+  if (!selectedNode) return null;
 
   return (
     <DialogContent
       className="sm:max-w-sm md:max-w-lg p-0"
       showCloseButton={false}
     >
-      {prefillComponent}
-      {explorerComponent}
+      <div className="flex items-center justify-between px-4 pt-4">
+        <h2 className="text-sm font-semibold">
+          {viewPrefill ? "Prefill Options" : "Data Explorer"}
+        </h2>
+        <Switch
+          id="switch-prefill"
+          checked={viewPrefill}
+          onCheckedChange={setViewPrefill}
+          aria-label="Toggle between prefill and explorer view"
+        />
+      </div>
+
+      {viewPrefill ? (
+        <PrefillView
+          selectedNode={selectedNode}
+          formMap={formMap}
+          onFieldClick={(title, form) => {
+            handleFieldClick(title, form);
+            setViewPrefill(false);
+          }}
+        />
+      ) : (
+        <ExplorerView
+          dependencyNodes={dependencyNodes}
+          clearUp={onSubmitClearUp}
+        />
+      )}
     </DialogContent>
   );
 }
