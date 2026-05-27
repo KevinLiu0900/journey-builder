@@ -134,3 +134,5 @@ export type CurrentFormType = {
     checkbox_group?: string;
   };
 };
+
+export type ValidationType = { error?: string; valid: boolean };

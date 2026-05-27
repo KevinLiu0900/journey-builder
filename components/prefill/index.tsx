@@ -18,7 +18,7 @@ import {
 import { FieldGroup } from '@/components/ui/field';
 import { Switch } from '../ui/switch';
 import { useCallback, useMemo } from 'react';
-import DynamicRenderer from './dynamic-renderer';
+import { RenderEngine } from './renderer';
 import { AvantosType, FormProperties, FormType } from '@/types';
 import { AppSidebar } from '../sidebar';
 import { FormNodeType } from '../flows/form-node';
@@ -176,13 +176,9 @@ function PrefillView({
 
   return (
     <form className="p-4">
-      <DialogHeader>
-        <DialogTitle>Prefill</DialogTitle>
-        <DialogDescription>Prefill fields for this form</DialogDescription>
-      </DialogHeader>
       <FieldGroup id="prefill-fields">
         {properties.map(property => (
-          <DynamicRenderer
+          <RenderEngine
             key={property.id}
             name={property.key}
             type={property.avantos_type}
@@ -363,12 +359,16 @@ export function PrefillDialog(props: PrefillDialogProps) {
   if (!selectedNode) return null;
 
   return (
-    <DialogContent className="sm:max-w-sm md:max-w-lg p-0 gap-0" showCloseButton={false}>
+    <DialogContent
+      className="sm:max-w-sm md:max-w-lg p-0 gap-0 max-h-[70dvh] overflow-y-auto"
+      showCloseButton={false}
+    >
       <div className="flex items-center justify-between px-4 pt-4">
         <DialogHeader>
-          <DialogTitle className="px-2.5 pb-1">
-            {explorer ? 'Prefill Options' : 'Select data element to map'}
+          <DialogTitle className="pb-1">
+            {explorer ? 'Prefill' : 'Select data element to map'}
           </DialogTitle>
+          {explorer && <DialogDescription>Prefill fields for this form</DialogDescription>}
         </DialogHeader>
         <Switch
           id="switch-prefill"
