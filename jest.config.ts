@@ -27,6 +27,7 @@ const config: Config = {
     '!**/server/**',
     '!**/components/ui/**',
     '!**/app/not-found.tsx',
+    '!**/coverage/**/*.js',
   ],
   coverageThreshold: {
     global: {

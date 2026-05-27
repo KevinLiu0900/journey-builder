@@ -1,3 +1,5 @@
+'use client';
+import { useEffect, useState } from 'react';
 import Flow from './flow';
 import { Edge, FormNodeType } from './form-node';
 
@@ -12,35 +14,37 @@ interface GraphData {
 }
 
 /**
- * Fetch graph data from the server-side API
- * Runs on the server before component renders
+ *
+ * @returns
  */
-async function fetchGraphData(): Promise<GraphData | null> {
-  try {
-    const url = `${API_BASE_URL}/api/v1/${PROJECT_ID}/actions/blueprints/${BLUEPRINT_ID}/graph`;
+export default function GraphContent() {
+  const [graphData, setGraphData] = useState<GraphData | null>(null);
+  useEffect(() => {
+    /**
+     * Fetch graph data from the server-side API
+     * Runs on the server before component renders
+     */
+    async function fetchGraphData() {
+      try {
+        const url = `${API_BASE_URL}/api/v1/${PROJECT_ID}/actions/blueprints/${BLUEPRINT_ID}/graph`;
 
-    const response = await fetch(url, {
-      next: { revalidate: 3600 }, // ISR: revalidate every hour
-    });
+        const response = await fetch(url, {
+          next: { revalidate: 3600 }, // ISR: revalidate every hour
+        });
 
-    if (!response.ok) {
-      console.error('API request failed:', response.status, response.statusText);
-      return null;
+        if (!response.ok) {
+          console.error('API request failed:', response.status, response.statusText);
+          return;
+        }
+
+        const graphData = await response.json();
+        setGraphData(graphData);
+      } catch (error) {
+        console.error('Failed to fetch graph data:', error);
+      }
     }
-
-    return response.json();
-  } catch (error) {
-    console.error('Failed to fetch graph data:', error);
-    return null;
-  }
-}
-
-/**
- * Server component that fetches and renders graph data
- * Data fetching happens server-side during render
- */
-export default async function GraphContent() {
-  const graphData = await fetchGraphData();
+    fetchGraphData();
+  }, []); // Empty array = run once on mount
 
   if (!graphData) {
     return (

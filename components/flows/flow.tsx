@@ -132,10 +132,11 @@ function Flow(props: FlowProps) {
   };
 
   const updateDependenciesCallback = useCallback(() => {
-    if (Object.keys(traverseResult.nodeMap).length > 0) {
-      updateDependencies(dependencyMap(traverseResult.nodeMap));
+    if (Object.keys(traverseResult?.nodeMap).length > 0) {
+      updateDependencies(dependencyMap(traverseResult?.nodeMap));
     }
-  }, [traverseResult.nodeMap, updateDependencies]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty array = run once on mount
 
   useEffect(() => {
     updateDependenciesCallback();
