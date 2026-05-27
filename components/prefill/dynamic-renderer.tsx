@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { useCurrentForm, useExplorer, useSelectedFieldContext } from '@/app/context';
 import { useCallback, useMemo } from 'react';
 import * as v from 'valibot';
-import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '../ui/input-group';
+import { InputGroup, InputGroupButton, InputGroupInput } from '../ui/input-group';
 
 type DynamicRendererProps = {
   type: AvantosType;

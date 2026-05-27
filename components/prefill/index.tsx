@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { FieldGroup } from '@/components/ui/field';
 import { Switch } from '../ui/switch';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import DynamicRenderer from './dynamic-renderer';
 import { AvantosType, FormProperties, FormType } from '@/types';
 import { AppSidebar } from '../sidebar';
@@ -157,7 +157,6 @@ function PrefillView({
 
   const handleValueChange = useCallback(
     (value: string, property: PropertyContent) => {
-      console.log('🚀 ~ PrefillView ~ value:', value);
       // Update form with the value as it changes
       const fieldLabel = getFieldLabelFromType(property.avantos_type, property.title);
 
@@ -295,7 +294,6 @@ export function PrefillDialog(props: PrefillDialogProps) {
   const selectedNode = useCurrentNode();
   const { handleFieldClick, selectedField } = useSelectedFieldContext();
   const { handleAttachFieldClick } = useAttachFieldContext();
-  const { updateCurrentForm } = useCurrentForm();
   const { explorer, toggleExplorer } = useExplorer();
 
   const onSubmitClearUp = useCallback(() => {

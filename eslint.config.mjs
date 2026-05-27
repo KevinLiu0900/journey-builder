@@ -7,13 +7,20 @@ const eslintConfig = defineConfig([
   ...nextTs,
   {
     rules: {
-      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_+', // Fixed: requires at least one underscore
+          varsIgnorePattern: '^_+', // Optional: also ignore unused variables
+        },
+      ],
       '@typescript-eslint/ban-ts-comment': 'off',
     },
   },
   {
     files: ['__tests__/**/*.{ts,tsx}', 'global.d.ts'],
     rules: {
+      '@typescript-eslint/no-unused-vars': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
