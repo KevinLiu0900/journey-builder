@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   ReactFlow,
@@ -8,15 +8,15 @@ import {
   useEdgesState,
   NodeTypes,
   type Node,
-} from "@xyflow/react";
+} from '@xyflow/react';
 
-import "@xyflow/react/dist/style.css";
+import '@xyflow/react/dist/style.css';
 
-import FormNode, { Edge, FormNodeType } from "@/components/flows/form-node";
-import { useFormNode } from "@/app/context";
-import { Dialog } from "../ui/dialog";
-import { PrefillDialog } from "../prefill";
-import { useCallback, useEffect } from "react";
+import FormNode, { Edge, FormNodeType } from '@/components/flows/form-node';
+import { useFormNode } from '@/app/context';
+import { Dialog } from '../ui/dialog';
+import { PrefillDialog } from '../prefill';
+import { useCallback, useEffect } from 'react';
 
 const nodeTypes: NodeTypes = {
   formNodeType: FormNode,
@@ -34,23 +34,20 @@ function drawEdge(source: FormNodeType, target: FormNodeType) {
   return {
     id: `e${source.id}-${target.id}`,
     source: source.id,
-    sourceHandle: "a",
+    sourceHandle: 'a',
     target: target.id,
-    targetHandle: "c",
+    targetHandle: 'c',
   };
 }
 
-function drawNodes(
-  nodes: FormNodeType[],
-  onClick?: (node: FormNodeType) => void,
-) {
+function drawNodes(nodes: FormNodeType[], onClick?: (node: FormNodeType) => void) {
   const reactFlowNodes: Node[] = [];
 
   for (const node of nodes) {
     if (node.data.prerequisites.length === 0) {
       reactFlowNodes.unshift({
         id: node.id,
-        type: "formNodeType",
+        type: 'formNodeType',
         data: {
           ...node.data,
           onClick: () => onClick?.(node),
@@ -63,7 +60,7 @@ function drawNodes(
 
     reactFlowNodes.push({
       id: node.id,
-      type: "formNodeType",
+      type: 'formNodeType',
       data: {
         ...node.data,
         onClick: () => onClick?.(node),
@@ -126,9 +123,7 @@ function Flow(props: FlowProps) {
   // @ts-ignore-next-line
   const [nodes, _setNodes, onNodesChange] = useNodesState(_nodes || []);
   // @ts-ignore-next-line
-  const [edges, _setEdges, onEdgesChange] = useEdgesState(
-    traverseResult.edges || [],
-  );
+  const [edges, _setEdges, onEdgesChange] = useEdgesState(traverseResult.edges || []);
 
   const resetSelectionOnClose = (open: boolean) => {
     if (!open) {
@@ -144,7 +139,7 @@ function Flow(props: FlowProps) {
 
   useEffect(() => {
     updateDependenciesCallback();
-  }, []); // Run once on mount to set initial dependencies
+  }, [updateDependenciesCallback]);
 
   return (
     <Dialog onOpenChange={resetSelectionOnClose}>
@@ -164,10 +159,7 @@ function Flow(props: FlowProps) {
         <Background />
       </ReactFlow>
 
-      <PrefillDialog
-        forms={props.data.forms}
-        nodeMap={traverseResult.nodeMap}
-      />
+      <PrefillDialog forms={props.data.forms} nodeMap={traverseResult.nodeMap} />
     </Dialog>
   );
 }

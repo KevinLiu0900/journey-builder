@@ -94,7 +94,7 @@ Example:
 ### Mock a module
 
 ```typescript
-jest.mock("@/path/to/module", () => ({
+jest.mock('@/path/to/module', () => ({
   exportedFunction: jest.fn(),
 }));
 ```
@@ -102,16 +102,16 @@ jest.mock("@/path/to/module", () => ({
 ### Mock a file system operation
 
 ```typescript
-jest.mock("fs/promises");
-(fs.readFile as jest.Mock).mockResolvedValue("data");
+jest.mock('fs/promises');
+(fs.readFile as jest.Mock).mockResolvedValue('data');
 ```
 
 ### Mock window/global
 
 ```typescript
-Object.defineProperty(window, "matchMedia", {
+Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: jest.fn().mockImplementation((query) => ({
+  value: jest.fn().mockImplementation(query => ({
     // mock implementation
   })),
 });
@@ -121,13 +121,13 @@ Object.defineProperty(window, "matchMedia", {
 
 ```typescript
 // Element presence
-expect(screen.getByText("text")).toBeInTheDocument();
-expect(screen.getByTestId("id")).toBeVisible();
+expect(screen.getByText('text')).toBeInTheDocument();
+expect(screen.getByTestId('id')).toBeVisible();
 
 // Element properties
-expect(element).toHaveAttribute("href", "/path");
-expect(element).toHaveClass("active");
-expect(input).toHaveValue("text");
+expect(element).toHaveAttribute('href', '/path');
+expect(element).toHaveClass('active');
+expect(input).toHaveValue('text');
 
 // Function calls
 expect(mockFn).toHaveBeenCalled();

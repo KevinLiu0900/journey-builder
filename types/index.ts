@@ -62,13 +62,13 @@ export interface FormProperties {
 }
 
 export interface Button {
-  avantos_type: "button";
+  avantos_type: 'button';
   title: string;
   type: string;
 }
 
 export interface DynamicCheckboxGroup {
-  avantos_type: "dynamic-checkbox-group";
+  avantos_type: 'dynamic-checkbox-group';
   items: Items;
   type: string;
   uniqueItems: boolean;
@@ -80,56 +80,56 @@ export interface Items {
 }
 
 export interface DynamicObject {
-  avantos_type: "object-enum";
-  enum: any[];
+  avantos_type: 'object-enum';
+  enum: string[];
   title: string;
   type: string;
 }
 
 export interface Email {
-  avantos_type: "short-text";
-  format: "email";
+  avantos_type: 'short-text';
+  format: 'email';
   title: string;
   type: string;
 }
 
 export interface Id {
-  avantos_type: "short-text";
+  avantos_type: 'short-text';
   title: string;
   type: string;
 }
 
 export interface MultiSelect {
-  avantos_type: "multi-select";
+  avantos_type: 'multi-select';
   items: Items;
   type: string;
   uniqueItems: boolean;
 }
 
 export interface Name {
-  avantos_type: "short-text";
+  avantos_type: 'short-text';
   title: string;
   type: string;
 }
 
 export interface Notes {
-  avantos_type: "multi-line-text";
+  avantos_type: 'multi-line-text';
   title: string;
   type: string;
 }
 
 export type AvantosType =
-  | "button"
-  | "checkbox-group"
-  | "object-enum"
-  | "short-text"
-  | "multi-select"
-  | "multi-line-text";
+  | 'button'
+  | 'checkbox-group'
+  | 'object-enum'
+  | 'short-text'
+  | 'multi-select'
+  | 'multi-line-text';
 
 export type CurrentFormType = {
   from: string; // label of the form inherited from
   data: {
-    email?: string; 
+    email?: string;
     object_enum?: string;
     checkbox_group?: string;
   };

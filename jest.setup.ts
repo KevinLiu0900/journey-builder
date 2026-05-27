@@ -1,7 +1,7 @@
-import "@testing-library/jest-dom";
+import '@testing-library/jest-dom';
 
 // Mock next/navigation for client components
-jest.mock("next/navigation", () => ({
+jest.mock('next/navigation', () => ({
   useRouter() {
     return {
       push: jest.fn(),
@@ -10,7 +10,7 @@ jest.mock("next/navigation", () => ({
     };
   },
   usePathname() {
-    return "";
+    return '';
   },
   useSearchParams() {
     return new URLSearchParams();
@@ -18,9 +18,9 @@ jest.mock("next/navigation", () => ({
 }));
 
 // Mock window.matchMedia
-Object.defineProperty(window, "matchMedia", {
+Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: jest.fn().mockImplementation((query) => ({
+  value: jest.fn().mockImplementation(query => ({
     matches: false,
     media: query,
     onchange: null,

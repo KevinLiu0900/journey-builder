@@ -1,1 +1,1 @@
-export { default as AppSidebar } from "./inherited-component";
+export { default as AppSidebar } from './inherited-component';

@@ -1,7 +1,7 @@
-import { Handle, Node, NodeProps, Position } from "@xyflow/react";
-import { Form } from "lucide-react";
-import { Button } from "../ui/button";
-import { DialogTrigger } from "../ui/dialog";
+import { Handle, Node, NodeProps, Position } from '@xyflow/react';
+import { Form } from 'lucide-react';
+import { Button } from '../ui/button';
+import { DialogTrigger } from '../ui/dialog';
 
 interface SlaDuration {
   number: number;
@@ -22,7 +22,7 @@ export type FormNodeData = {
   approval_roles: string[];
 };
 
-type FormNode = Node<FormNodeData & { onClick?: () => void }, "counter">;
+type FormNode = Node<FormNodeData & { onClick?: () => void }, 'counter'>;
 export type FormNodeProps = NodeProps<FormNode>;
 export type FormNodeType = {
   id: string;
@@ -37,7 +37,7 @@ export type Edge = {
 };
 
 export default function FormNode(props: FormNodeProps) {
-  const name = props.data.name || "Form";
+  const name = props.data.name || 'Form';
   return (
     <DialogTrigger asChild>
       <Button
@@ -51,18 +51,14 @@ export default function FormNode(props: FormNodeProps) {
           </div>
         </div>
         <div className="w-full flex flex-col items-start justify-center gap-0">
-          <span className="text-sm text-black/40 font-bold font-sans">
-            Form
-          </span>
-          <span className="block text-base text-black/60 font-extrabold">
-            {name}
-          </span>
+          <span className="text-sm text-black/40 font-bold font-sans">Form</span>
+          <span className="block text-base text-black/60 font-extrabold">{name}</span>
         </div>
 
-        <Handle type="source" position={Position.Right} id={"a"} />
-        <Handle type="source" position={Position.Left} id={"b"} />
-        <Handle type="target" position={Position.Left} id={"c"} />
-        <Handle type="target" position={Position.Right} id={"d"} />
+        <Handle type="source" position={Position.Right} id={'a'} />
+        <Handle type="source" position={Position.Left} id={'b'} />
+        <Handle type="target" position={Position.Left} id={'c'} />
+        <Handle type="target" position={Position.Right} id={'d'} />
       </Button>
     </DialogTrigger>
   );

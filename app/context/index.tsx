@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState } from 'react';
 
-import type { FormNodeType } from "@/components/flows/form-node";
-import { CurrentFormType, FormType } from "@/types";
+import type { FormNodeType } from '@/components/flows/form-node';
+import { CurrentFormType, FormType } from '@/types';
 
 type DependencyMapType = Record<string, Record<string, FormNodeType>> | null;
 type AttachedFieldType = { formName: string; fieldLabel: string } | null;
@@ -45,11 +45,7 @@ const context = createContext<{
   toggleExplorer: () => {},
 });
 
-export const FormNodeProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+export const FormNodeProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentForm, setCurrentForm] = useState<CurrentFormType | null>(null);
   const [currentNode, setCurrentNode] = useState<FormNodeType | null>(null);
   const [dependencyMap, setDependencyMap] = useState<DependencyMapType>(null);
@@ -65,7 +61,7 @@ export const FormNodeProvider = ({
   }
   function handleFieldClick(fieldKey: string, form: FormType | null) {
     setSelectedField({
-      from: form?.name || "",
+      from: form?.name || '',
       fieldKey,
       form,
     });
@@ -73,7 +69,7 @@ export const FormNodeProvider = ({
 
   function updateCurrentForm(form: CurrentFormType | null) {
     setCurrentForm({
-      from: form?.from || currentForm?.from || "",
+      from: form?.from || currentForm?.from || '',
       data: {
         ...currentForm?.data,
         ...form?.data,
@@ -85,7 +81,7 @@ export const FormNodeProvider = ({
   }
 
   function clearField(field: string) {
-    updateCurrentForm({ data: { [field]: "" } } as CurrentFormType);
+    updateCurrentForm({ data: { [field]: '' } } as CurrentFormType);
   }
 
   function resetForm() {
@@ -95,7 +91,7 @@ export const FormNodeProvider = ({
   }
 
   function toggleExplorer(show?: boolean) {
-    setShowPrefill((prev) => show ?? !prev);
+    setShowPrefill(prev => show ?? !prev);
   }
 
   return (
@@ -124,17 +120,12 @@ export const FormNodeProvider = ({
 
 export const useCurrentNode = () => useContext(context).currentNode;
 export const useSelectedFieldContext = () => {
-  const { dependencyMap, selectedField, handleFieldClick } =
-    useContext(context);
+  const { dependencyMap, selectedField, handleFieldClick } = useContext(context);
   return { dependencyMap, selectedField, handleFieldClick };
 };
 export const useAttachFieldContext = () => {
-  const {
-    attachedField,
-    selectedField,
-    handleAttachFieldClick,
-    handleFieldClick,
-  } = useContext(context);
+  const { attachedField, selectedField, handleAttachFieldClick, handleFieldClick } =
+    useContext(context);
   return {
     attachedField,
     selectedField,

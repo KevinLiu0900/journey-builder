@@ -1,9 +1,9 @@
-import Flow from "./flow";
-import { Edge, FormNodeType } from "./form-node";
+import Flow from './flow';
+import { Edge, FormNodeType } from './form-node';
 
-const API_BASE_URL = process.env.NEXT_APP_URL || "http://localhost:3000";
-const BLUEPRINT_ID = process.env.NEXT_PUBLIC_BLUEPRINT_ID || "blueprint456";
-const PROJECT_ID = process.env.NEXT_PUBLIC_PROJECT_ID || "project123";
+const API_BASE_URL = process.env.NEXT_APP_URL || 'http://localhost:3000';
+const BLUEPRINT_ID = process.env.NEXT_PUBLIC_BLUEPRINT_ID || 'blueprint456';
+const PROJECT_ID = process.env.NEXT_PUBLIC_PROJECT_ID || 'project123';
 
 interface GraphData {
   nodes: FormNodeType[];
@@ -24,17 +24,13 @@ async function fetchGraphData(): Promise<GraphData | null> {
     });
 
     if (!response.ok) {
-      console.error(
-        "API request failed:",
-        response.status,
-        response.statusText,
-      );
+      console.error('API request failed:', response.status, response.statusText);
       return null;
     }
 
     return response.json();
   } catch (error) {
-    console.error("Failed to fetch graph data:", error);
+    console.error('Failed to fetch graph data:', error);
     return null;
   }
 }

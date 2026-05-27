@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = process.env.NEXT_APP_URL || "http://localhost:4000";
+const BACKEND_URL = process.env.NEXT_APP_URL || 'http://localhost:4000';
 
 /**
  * Proxy middleware to forward requests to the backend server
@@ -10,7 +10,7 @@ export default function middleware(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
 
   // Only proxy API routes
-  if (!pathname.startsWith("/api/")) {
+  if (!pathname.startsWith('/api/')) {
     return NextResponse.next();
   }
 
@@ -29,6 +29,6 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    "/((?!_next/static|_next/image|favicon.ico).*)",
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };

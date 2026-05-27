@@ -219,21 +219,21 @@ describe("ComponentName", () => {
 ### Hook Test Template
 
 ```typescript
-import { renderHook, act } from "@testing-library/react";
-import { useMyHook } from "@/hooks/use-my-hook";
+import { renderHook, act } from '@testing-library/react';
+import { useMyHook } from '@/hooks/use-my-hook';
 
-describe("useMyHook", () => {
-  it("should return initial value", () => {
+describe('useMyHook', () => {
+  it('should return initial value', () => {
     const { result } = renderHook(() => useMyHook());
     expect(result.current).toBeDefined();
   });
 
-  it("should update value", () => {
+  it('should update value', () => {
     const { result } = renderHook(() => useMyHook());
     act(() => {
-      result.current.setValue("new");
+      result.current.setValue('new');
     });
-    expect(result.current.value).toBe("new");
+    expect(result.current.value).toBe('new');
   });
 });
 ```
@@ -241,11 +241,11 @@ describe("useMyHook", () => {
 ### API Route Test Template
 
 ```typescript
-import { GET } from "@/app/api/route";
+import { GET } from '@/app/api/route';
 
-describe("GET /api/route", () => {
-  it("should return data successfully", async () => {
-    const request = new Request("http://localhost:3000/api/route");
+describe('GET /api/route', () => {
+  it('should return data successfully', async () => {
+    const request = new Request('http://localhost:3000/api/route');
     const response = await GET(request);
 
     expect(response.status).toBe(200);
@@ -331,16 +331,16 @@ jest.mock("@/components/ui/button", () => ({
 ### API Mocks
 
 ```typescript
-jest.mock("fs/promises");
+jest.mock('fs/promises');
 (fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(data));
 ```
 
 ### Window API Mocks
 
 ```typescript
-Object.defineProperty(window, "matchMedia", {
+Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: jest.fn().mockImplementation((query) => ({
+  value: jest.fn().mockImplementation(query => ({
     matches: false,
     media: query,
     // ... mock implementation

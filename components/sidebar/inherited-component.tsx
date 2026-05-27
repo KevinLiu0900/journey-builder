@@ -1,17 +1,12 @@
-"use client";
+'use client';
 
-import { useAttachFieldContext } from "@/app/context";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { ChevronRight, Search } from "lucide-react";
-import { useCallback, useState } from "react";
-import { Label } from "../ui/label";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from "../ui/input-group";
+import { useAttachFieldContext } from '@/app/context';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { ChevronRight, Search } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { Label } from '../ui/label';
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '../ui/input-group';
 
 type Action = {
   id: string;
@@ -24,7 +19,7 @@ type DropdownItemProps = {
   contents: Action[];
 };
 function formatLabel(label: string) {
-  const formattedLabel = label?.replace(/ /g, "_")?.toLowerCase() || "";
+  const formattedLabel = label?.replace(/ /g, '_')?.toLowerCase() || '';
   return formattedLabel;
 }
 function DropdownGroup({ title, contents }: DropdownItemProps) {
@@ -39,25 +34,20 @@ function DropdownGroup({ title, contents }: DropdownItemProps) {
     );
   };
 
-  const toggleDropdown = () => setIsOpen((prev) => !prev);
+  const toggleDropdown = () => setIsOpen(prev => !prev);
   return (
     <>
-      <Button
-        onClick={toggleDropdown}
-        className="flex min-h-8 gap-2"
-        variant="ghost"
-        type="button"
-      >
+      <Button onClick={toggleDropdown} className="flex min-h-8 gap-2" variant="ghost" type="button">
         <ChevronRight className="h-4 w-4" />
         <span className="text-sm font-medium capitalize">{title}</span>
       </Button>
 
       {isOpen && contents.length > 0 ? (
         <div className="ml-10 mb-2 flex flex-col items-start justify-center gap-0.5">
-          {contents.map((content) => (
+          {contents.map(content => (
             <Button
-              className={cn("rounded-md py-0.5 px-2 cursor-pointer", {
-                "bg-blue-100": isSeletected(content),
+              className={cn('rounded-md py-0.5 px-2 cursor-pointer', {
+                'bg-blue-100': isSeletected(content),
               })}
               key={content.id}
               onClick={content.action}
@@ -82,22 +72,22 @@ type InheritedComponentProps = {
   data: InheritedComponentData[];
 };
 export default function InheritedComponent({ data }: InheritedComponentProps) {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
 
   const filteredData = data
-    .map((item) => ({
+    .map(item => ({
       ...item,
-      contents: item.contents.filter((content) =>
-        content.label.toLowerCase().includes(searchTerm.toLowerCase()),
+      contents: item.contents.filter(content =>
+        content.label.toLowerCase().includes(searchTerm.toLowerCase())
       ),
     }))
-    .filter((item) => (searchTerm ? item.contents.length > 0 : true));
+    .filter(item => (searchTerm ? item.contents.length > 0 : true));
 
   const handleSearchChange = useCallback(
     (value: string) => {
       setSearchTerm(value);
     },
-    [setSearchTerm],
+    [setSearchTerm]
   );
 
   return (
@@ -108,10 +98,10 @@ export default function InheritedComponent({ data }: InheritedComponentProps) {
         </Label>
         <InputGroup>
           <InputGroupInput
-            type={"search"}
-            placeholder={"Search..."}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className={cn("rounded-lg bg-zinc-50 outline-none ")}
+            type={'search'}
+            placeholder={'Search...'}
+            onChange={e => handleSearchChange(e.target.value)}
+            className={cn('rounded-lg bg-zinc-50 outline-none ')}
           />
 
           <InputGroupAddon align="inline-start">
@@ -128,12 +118,8 @@ export default function InheritedComponent({ data }: InheritedComponentProps) {
         </InputGroup>
       </div>
 
-      {filteredData.map((item) => (
-        <DropdownGroup
-          key={item.id}
-          title={item.group}
-          contents={item.contents}
-        />
+      {filteredData.map(item => (
+        <DropdownGroup key={item.id} title={item.group} contents={item.contents} />
       ))}
     </>
   );

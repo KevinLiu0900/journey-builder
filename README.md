@@ -288,7 +288,7 @@ npm start
 The `next.config.ts` provides webpack fallbacks for browser-incompatible modules:
 
 ```typescript
-webpack: (config) => {
+webpack: config => {
   config.resolve.fallback = {
     fs: false,
     path: false,
@@ -381,9 +381,9 @@ Returns a JSON object containing the blueprint graph structure:
 #### Usage Example
 
 ```typescript
-const API_BASE_URL = process.env.NEXT_APP_URL || "http://localhost:3000";
-const PROJECT_ID = process.env.NEXT_PUBLIC_PROJECT_ID || "project123";
-const BLUEPRINT_ID = process.env.NEXT_PUBLIC_BLUEPRINT_ID || "blueprint456";
+const API_BASE_URL = process.env.NEXT_APP_URL || 'http://localhost:3000';
+const PROJECT_ID = process.env.NEXT_PUBLIC_PROJECT_ID || 'project123';
+const BLUEPRINT_ID = process.env.NEXT_PUBLIC_BLUEPRINT_ID || 'blueprint456';
 
 const url = `${API_BASE_URL}/api/v1/${PROJECT_ID}/actions/blueprints/${BLUEPRINT_ID}/graph`;
 
@@ -488,7 +488,7 @@ Dynamically renders form fields based on schema and provides real-time validatio
 type DynamicRendererProps = {
   type: AvantosType;
   title: string;
-  format?: "email";
+  format?: 'email';
   inherited?: boolean;
   inheritFrom?: string;
   form: FormType;
@@ -577,7 +577,7 @@ const { handleNodeClick, updateDependencies, resetForm, ... } = useFormNode();
 
 ```typescript
 function dependencyMap(
-  nodeMap: Record<string, FormNodeType>,
+  nodeMap: Record<string, FormNodeType>
 ): Record<string, Record<string, FormNodeType>>;
 ```
 
@@ -622,7 +622,7 @@ function dependencyMap(
 ```typescript
 function traverseNode(
   nodes: FormNodeType[],
-  edges: Edge[] = [],
+  edges: Edge[] = []
 ): {
   nodeMap: Record<string, FormNodeType>;
   edges: any[];
@@ -670,10 +670,7 @@ Edge Data Format:
 **Function Signature:**
 
 ```typescript
-function drawNodes(
-  nodes: FormNodeType[],
-  onClick?: (node: FormNodeType) => void,
-): Node[];
+function drawNodes(nodes: FormNodeType[], onClick?: (node: FormNodeType) => void): Node[];
 ```
 
 **Algorithm:**
@@ -857,9 +854,9 @@ const response = await fetch(url, {
   next: { revalidate: 3600 },
 });
 
-console.log("Fetch URL:", url);
-console.log("Response Status:", response.status);
-console.log("Response Data:", await response.json());
+console.log('Fetch URL:', url);
+console.log('Response Status:', response.status);
+console.log('Response Data:', await response.json());
 ```
 
 ### Performance Optimization

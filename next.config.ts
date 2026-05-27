@@ -1,7 +1,7 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  webpack: (config) => {
+  webpack: config => {
     config.resolve.fallback = {
       fs: false,
       path: false,

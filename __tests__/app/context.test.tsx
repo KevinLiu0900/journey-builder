@@ -1,11 +1,6 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import {
-  FormNodeProvider,
-  useFormNode,
-  useCurrentForm,
-  useExplorer,
-} from "@/app/context/index";
-import { FormNodeType } from "@/components/flows/form-node";
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { FormNodeProvider, useFormNode, useCurrentForm, useExplorer } from '@/app/context/index';
+import { FormNodeType } from '@/components/flows/form-node';
 
 // Test component that uses the context
 function TestFormNodeComponent() {
@@ -21,19 +16,19 @@ function TestFormNodeComponent() {
   } = useFormNode();
 
   const mockNode: FormNodeType = {
-    id: "form-1",
+    id: 'form-1',
     position: { x: 0, y: 0 },
-    type: "form",
+    type: 'form',
     data: {
-      id: "form-1",
-      component_key: "key-1",
-      component_type: "form",
-      component_id: "comp-1",
-      name: "Test Form",
+      id: 'form-1',
+      component_key: 'key-1',
+      component_type: 'form',
+      component_id: 'comp-1',
+      name: 'Test Form',
       prerequisites: [],
       permitted_roles: [],
       input_mapping: {},
-      sla_duration: { number: 0, unit: "minutes" },
+      sla_duration: { number: 0, unit: 'minutes' },
       approval_required: false,
       approval_roles: [],
     },
@@ -41,15 +36,15 @@ function TestFormNodeComponent() {
 
   return (
     <div>
-      <div data-testid="current-form">{currentForm?.from || "none"}</div>
-      <div data-testid="current-node">{currentNode?.id || "none"}</div>
-      <div data-testid="explorer-state">{explorer ? "open" : "closed"}</div>
+      <div data-testid="current-form">{currentForm?.from || 'none'}</div>
+      <div data-testid="current-node">{currentNode?.id || 'none'}</div>
+      <div data-testid="explorer-state">{explorer ? 'open' : 'closed'}</div>
       <button onClick={() => handleNodeClick(mockNode)}>Select Node</button>
       <button
         onClick={() =>
           updateCurrentForm({
-            from: "form-1",
-            data: { email: "test@test.com" },
+            from: 'form-1',
+            data: { email: 'test@test.com' },
           })
         }
       >
@@ -61,136 +56,127 @@ function TestFormNodeComponent() {
   );
 }
 
-describe("app/context/index.tsx", () => {
-  describe("FormNodeProvider", () => {
-
-    it("should update currentNode on handleNodeClick", async () => {
+describe('app/context/index.tsx', () => {
+  describe('FormNodeProvider', () => {
+    it('should update currentNode on handleNodeClick', async () => {
       render(
         <FormNodeProvider>
           <TestFormNodeComponent />
-        </FormNodeProvider>,
+        </FormNodeProvider>
       );
 
-      const selectButton = screen.getByText("Select Node");
+      const selectButton = screen.getByText('Select Node');
       fireEvent.click(selectButton);
 
       await waitFor(() => {
-        expect(screen.getByTestId("current-node")).toHaveTextContent("form-1");
+        expect(screen.getByTestId('current-node')).toHaveTextContent('form-1');
       });
     });
 
-    it("should update currentForm on updateCurrentForm", async () => {
+    it('should update currentForm on updateCurrentForm', async () => {
       render(
         <FormNodeProvider>
           <TestFormNodeComponent />
-        </FormNodeProvider>,
+        </FormNodeProvider>
       );
 
-      const updateButton = screen.getByText("Update Form");
+      const updateButton = screen.getByText('Update Form');
       fireEvent.click(updateButton);
 
       await waitFor(() => {
-        expect(screen.getByTestId("current-form")).toHaveTextContent("form-1");
+        expect(screen.getByTestId('current-form')).toHaveTextContent('form-1');
       });
     });
 
-    it("should reset all state on resetForm", async () => {
+    it('should reset all state on resetForm', async () => {
       render(
         <FormNodeProvider>
           <TestFormNodeComponent />
-        </FormNodeProvider>,
+        </FormNodeProvider>
       );
 
       // Set some state
-      fireEvent.click(screen.getByText("Select Node"));
-      fireEvent.click(screen.getByText("Update Form"));
+      fireEvent.click(screen.getByText('Select Node'));
+      fireEvent.click(screen.getByText('Update Form'));
 
       await waitFor(() => {
-        expect(screen.getByTestId("current-node")).toHaveTextContent("form-1");
+        expect(screen.getByTestId('current-node')).toHaveTextContent('form-1');
       });
 
       // Reset
-      fireEvent.click(screen.getByText("Reset Form"));
+      fireEvent.click(screen.getByText('Reset Form'));
 
       await waitFor(() => {
-        expect(screen.getByTestId("current-node")).toHaveTextContent("none");
-        expect(screen.getByTestId("current-form")).toHaveTextContent("none");
+        expect(screen.getByTestId('current-node')).toHaveTextContent('none');
+        expect(screen.getByTestId('current-form')).toHaveTextContent('none');
       });
     });
   });
 
-  describe("useCurrentForm hook", () => {
+  describe('useCurrentForm hook', () => {
     function TestCurrentFormComponent() {
       const { currentForm, updateCurrentForm, clearField } = useCurrentForm();
 
       return (
         <div>
-          <div data-testid="form-email">
-            {(currentForm?.data?.email as string) || "no email"}
-          </div>
+          <div data-testid="form-email">{(currentForm?.data?.email as string) || 'no email'}</div>
           <button
             onClick={() =>
               updateCurrentForm({
-                from: "test",
-                data: { email: "new@test.com" },
+                from: 'test',
+                data: { email: 'new@test.com' },
               })
             }
           >
             Update Email
           </button>
-          <button onClick={() => clearField("email")}>Clear Email</button>
+          <button onClick={() => clearField('email')}>Clear Email</button>
         </div>
       );
     }
 
-    it("should provide current form data", async () => {
+    it('should provide current form data', async () => {
       render(
         <FormNodeProvider>
           <TestCurrentFormComponent />
-        </FormNodeProvider>,
+        </FormNodeProvider>
       );
 
-      fireEvent.click(screen.getByText("Update Email"));
+      fireEvent.click(screen.getByText('Update Email'));
 
       await waitFor(() => {
-        expect(screen.getByTestId("form-email")).toHaveTextContent(
-          "new@test.com",
-        );
+        expect(screen.getByTestId('form-email')).toHaveTextContent('new@test.com');
       });
     });
 
-    it("should clear field", async () => {
+    it('should clear field', async () => {
       render(
         <FormNodeProvider>
           <TestCurrentFormComponent />
-        </FormNodeProvider>,
+        </FormNodeProvider>
       );
 
-      fireEvent.click(screen.getByText("Update Email"));
+      fireEvent.click(screen.getByText('Update Email'));
 
       await waitFor(() => {
-        expect(screen.getByTestId("form-email")).toHaveTextContent(
-          "new@test.com",
-        );
+        expect(screen.getByTestId('form-email')).toHaveTextContent('new@test.com');
       });
 
-      fireEvent.click(screen.getByText("Clear Email"));
+      fireEvent.click(screen.getByText('Clear Email'));
 
       await waitFor(() => {
-        expect(screen.getByTestId("form-email")).toHaveTextContent("no email");
+        expect(screen.getByTestId('form-email')).toHaveTextContent('no email');
       });
     });
   });
 
-  describe("useExplorer hook", () => {
+  describe('useExplorer hook', () => {
     function TestExplorerComponent() {
       const { explorer, toggleExplorer } = useExplorer();
 
       return (
         <div>
-          <div data-testid="explorer-value">
-            {explorer ? "visible" : "hidden"}
-          </div>
+          <div data-testid="explorer-value">{explorer ? 'visible' : 'hidden'}</div>
           <button onClick={() => toggleExplorer()}>Toggle</button>
           <button onClick={() => toggleExplorer(true)}>Show</button>
           <button onClick={() => toggleExplorer(false)}>Hide</button>
@@ -198,44 +184,37 @@ describe("app/context/index.tsx", () => {
       );
     }
 
-
-    it("should set explorer to true explicitly", async () => {
+    it('should set explorer to true explicitly', async () => {
       render(
         <FormNodeProvider>
           <TestExplorerComponent />
-        </FormNodeProvider>,
+        </FormNodeProvider>
       );
 
-      fireEvent.click(screen.getByText("Show"));
+      fireEvent.click(screen.getByText('Show'));
 
       await waitFor(() => {
-        expect(screen.getByTestId("explorer-value")).toHaveTextContent(
-          "visible",
-        );
+        expect(screen.getByTestId('explorer-value')).toHaveTextContent('visible');
       });
     });
 
-    it("should set explorer to false explicitly", async () => {
+    it('should set explorer to false explicitly', async () => {
       render(
         <FormNodeProvider>
           <TestExplorerComponent />
-        </FormNodeProvider>,
+        </FormNodeProvider>
       );
 
-      fireEvent.click(screen.getByText("Show"));
+      fireEvent.click(screen.getByText('Show'));
 
       await waitFor(() => {
-        expect(screen.getByTestId("explorer-value")).toHaveTextContent(
-          "visible",
-        );
+        expect(screen.getByTestId('explorer-value')).toHaveTextContent('visible');
       });
 
-      fireEvent.click(screen.getByText("Hide"));
+      fireEvent.click(screen.getByText('Hide'));
 
       await waitFor(() => {
-        expect(screen.getByTestId("explorer-value")).toHaveTextContent(
-          "hidden",
-        );
+        expect(screen.getByTestId('explorer-value')).toHaveTextContent('hidden');
       });
     });
   });
