@@ -4,6 +4,7 @@ import {
   useAttachFieldContext,
   useCurrentForm,
   useCurrentNode,
+  useExplorer,
   useSelectedFieldContext,
 } from "@/app/context";
 import {
@@ -147,6 +148,8 @@ function PrefillView({
 }) {
   const form = formMap[selectedNode?.data?.component_id || ""];
   const { handleAttachFieldClick, handleFieldClick } = useAttachFieldContext();
+  const { updateCurrentForm } = useCurrentForm();
+
   const handleAction = useCallback(
     (property: PropertyContent) => {
       handleAttachFieldClick({
@@ -158,13 +161,35 @@ function PrefillView({
     },
     [form, handleFieldClick, handleAttachFieldClick],
   );
+
+  const handleValueChange = useCallback(
+    (value: string, property: PropertyContent) => {
+      console.log("🚀 ~ PrefillView ~ value:", value);
+      // Update form with the value as it changes
+      const fieldLabel = getFieldLabelFromType(
+        property.avantos_type,
+        property.title,
+      );
+
+      updateCurrentForm({
+        from: property.from,
+        data: {
+          [fieldLabel]: value,
+        },
+      });
+
+      handleAction(property);
+    },
+    [updateCurrentForm, handleAction],
+  );
+
   const properties = useMemo(
     () => extractFormProperties(form, handleAction),
-    [form],
+    [form, handleAction],
   );
 
   return (
-    <div className="p-4">
+    <form className="p-4">
       <DialogHeader>
         <DialogTitle>Prefill</DialogTitle>
         <DialogDescription>Prefill fields for this form</DialogDescription>
@@ -173,14 +198,20 @@ function PrefillView({
         {properties.map((property) => (
           <DynamicRenderer
             key={property.id}
+            name={property.key}
             type={property.avantos_type}
             title={property.title}
+            form={form}
             format={property.format as "email" | undefined}
-            onChange={() => onFieldClick(property.title, form)}
+            onValueChange={(value) => handleValueChange(value, property)}
+            onReset={() => {
+              handleFieldClick(property.title, form);
+              onFieldClick(property.title, form);
+            }}
           />
         ))}
       </FieldGroup>
-    </div>
+    </form>
   );
 }
 
@@ -248,16 +279,15 @@ function ExplorerView({
   );
 
   return (
-    <form onSubmit={onSubmit} className="py-4">
-      <DialogHeader>
-        <DialogTitle className="px-2.5 pb-1">
-          Select data element to map
-        </DialogTitle>
-      </DialogHeader>
-
-      <FieldGroup className="min-h-50 px-4 gap-1 items-start max-w-sm bg-zinc-50/50">
-        <AppSidebar data={sidebarData} />
-      </FieldGroup>
+    <form onSubmit={onSubmit} className="pb-4">
+      <div className="">
+        <div className="w-1/2">
+          <FieldGroup className="min-h-50 px-4 gap-1 items-start max-w-sm bg-zinc-50/50">
+            <AppSidebar data={sidebarData} />
+          </FieldGroup>
+        </div>
+        <div className="w-1/2"></div>
+      </div>
 
       <DialogFooter className="px-4 mx-0.5">
         <DialogClose asChild>
@@ -282,13 +312,12 @@ export function PrefillDialog(props: PrefillDialogProps) {
   const { handleFieldClick, selectedField } = useSelectedFieldContext();
   const { handleAttachFieldClick } = useAttachFieldContext();
   const { updateCurrentForm } = useCurrentForm();
-  const [viewPrefill, setViewPrefill] = useState(true);
+  const { explorer, toggleExplorer } = useExplorer();
 
   const onSubmitClearUp = useCallback(() => {
-    console.log("Clearing up after submit...");
-    setViewPrefill(true);
+    toggleExplorer(true);
     handleAttachFieldClick(null);
-  }, [setViewPrefill, handleAttachFieldClick]);
+  }, [toggleExplorer, handleAttachFieldClick]);
 
   const formMap = useMemo(() => createFormMap(props.forms), [props.forms]);
 
@@ -322,7 +351,7 @@ export function PrefillDialog(props: PrefillDialogProps) {
         formName: property.from,
       });
     },
-    [selectedField, updateCurrentForm, setViewPrefill],
+    [selectedField, updateCurrentForm, toggleExplorer],
   );
 
   const dependencyNodes = useMemo<DependencyNodeData[]>(() => {
@@ -355,28 +384,30 @@ export function PrefillDialog(props: PrefillDialogProps) {
 
   return (
     <DialogContent
-      className="sm:max-w-sm md:max-w-lg p-0"
+      className="sm:max-w-sm md:max-w-lg p-0 gap-0"
       showCloseButton={false}
     >
       <div className="flex items-center justify-between px-4 pt-4">
-        <h2 className="text-sm font-semibold">
-          {viewPrefill ? "Prefill Options" : "Data Explorer"}
-        </h2>
+        <DialogHeader>
+          <DialogTitle className="px-2.5 pb-1">
+            {explorer ? "Prefill Options" : "Select data element to map"}
+          </DialogTitle>
+        </DialogHeader>
         <Switch
           id="switch-prefill"
-          checked={viewPrefill}
-          onCheckedChange={setViewPrefill}
+          checked={explorer}
+          onCheckedChange={toggleExplorer}
           aria-label="Toggle between prefill and explorer view"
         />
       </div>
 
-      {viewPrefill ? (
+      {explorer ? (
         <PrefillView
           selectedNode={selectedNode}
           formMap={formMap}
           onFieldClick={(title, form) => {
             handleFieldClick(title, form);
-            setViewPrefill(false);
+            toggleExplorer(false);
           }}
         />
       ) : (

@@ -57,7 +57,7 @@ export default async function GraphContent() {
   }
 
   return (
-    <div className="h-screen w-screen border border-zinc-200 rounded-lg dark:border-zinc-800">
+    <div className="h-screen w-screen scale-95">
       <Flow data={graphData} />
     </div>
   );

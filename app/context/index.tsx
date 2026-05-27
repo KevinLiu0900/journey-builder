@@ -14,6 +14,7 @@ type SelectedFieldType = {
 } | null;
 
 const context = createContext<{
+  explorer: boolean;
   currentForm: CurrentFormType | null;
   dependencyMap: DependencyMapType;
   currentNode: FormNodeType | null;
@@ -26,7 +27,9 @@ const context = createContext<{
   updateCurrentForm: (form: CurrentFormType | null) => void;
   clearField: (field: string) => void;
   resetForm: () => void;
+  toggleExplorer: (show?: boolean) => void;
 }>({
+  explorer: false,
   currentForm: null,
   currentNode: null,
   dependencyMap: null,
@@ -39,6 +42,7 @@ const context = createContext<{
   updateCurrentForm: () => {},
   clearField: () => {},
   resetForm: () => {},
+  toggleExplorer: () => {},
 });
 
 export const FormNodeProvider = ({
@@ -51,6 +55,7 @@ export const FormNodeProvider = ({
   const [dependencyMap, setDependencyMap] = useState<DependencyMapType>(null);
   const [attachedField, setAttachedField] = useState<AttachedFieldType>(null);
   const [selectedField, setSelectedField] = useState<SelectedFieldType>(null);
+  const [showPrefill, setShowPrefill] = useState<boolean>(true);
 
   function handleNodeClick(node: FormNodeType | null) {
     setCurrentNode(node);
@@ -89,9 +94,14 @@ export const FormNodeProvider = ({
     setSelectedField(null);
   }
 
+  function toggleExplorer(show?: boolean) {
+    setShowPrefill((prev) => show ?? !prev);
+  }
+
   return (
     <context.Provider
       value={{
+        explorer: showPrefill,
         attachedField,
         currentForm,
         currentNode,
@@ -104,6 +114,7 @@ export const FormNodeProvider = ({
         resetForm,
         clearField,
         handleAttachFieldClick,
+        toggleExplorer,
       }}
     >
       {children}
@@ -130,6 +141,10 @@ export const useAttachFieldContext = () => {
     handleAttachFieldClick,
     handleFieldClick,
   };
+};
+export const useExplorer = () => {
+  const { explorer, toggleExplorer } = useContext(context);
+  return { explorer, toggleExplorer };
 };
 export const useCurrentForm = () => {
   const { currentForm, clearField, updateCurrentForm } = useContext(context);
