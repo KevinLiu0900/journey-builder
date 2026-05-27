@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import Flow from './flow';
 import { Edge, FormNodeType } from './form-node';
 
-const API_BASE_URL = process.env.NEXT_APP_URL || 'http://localhost:3000';
 const BLUEPRINT_ID = process.env.NEXT_PUBLIC_BLUEPRINT_ID || 'blueprint456';
 const PROJECT_ID = process.env.NEXT_PUBLIC_PROJECT_ID || 'project123';
 
@@ -26,7 +25,7 @@ export default function GraphContent() {
      */
     async function fetchGraphData() {
       try {
-        const url = `${API_BASE_URL}/api/v1/${PROJECT_ID}/actions/blueprints/${BLUEPRINT_ID}/graph`;
+        const url = `/api/v1/${PROJECT_ID}/actions/blueprints/${BLUEPRINT_ID}/graph`;
 
         const response = await fetch(url, {
           next: { revalidate: 3600 }, // ISR: revalidate every hour
