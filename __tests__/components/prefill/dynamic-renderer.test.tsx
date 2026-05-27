@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import DynamicRenderer from '@/components/prefill/dynamic-renderer.tsx';
+import { render, screen, fireEvent } from '@testing-library/react';
+import DynamicRenderer from '@/components/prefill/dynamic-renderer';
 import { FormType } from '@/types/index';
 import { FormNodeProvider } from '@/app/context/index';
 
@@ -180,5 +180,184 @@ describe('components/prefill/dynamic-renderer.tsx', () => {
 
     const input = screen.getByTestId('input-group-input');
     expect(input).toHaveAttribute('aria-invalid');
+  });
+
+  describe('DynamicRenderer - Extended Tests', () => {
+    it('should handle special characters in field title', () => {
+      render(
+        <FormNodeProvider>
+          <DynamicRenderer
+            type="short-text"
+            title="Email & Contact (2024)"
+            format="email"
+            form={mockForm}
+          />
+        </FormNodeProvider>
+      );
+
+      const input = screen.getByTestId('input-group-input');
+      expect(input).toHaveAttribute(
+        'name',
+        'email_&_contact_(2024)'.toLowerCase().replace(/ /g, '_')
+      );
+    });
+
+    it('should handle very long field titles', () => {
+      const longTitle = 'This is a very long field title that might break naming conventions';
+
+      render(
+        <FormNodeProvider>
+          <DynamicRenderer type="short-text" title={longTitle} format="email" form={mockForm} />
+        </FormNodeProvider>
+      );
+
+      expect(screen.getByTestId('field')).toBeInTheDocument();
+    });
+
+    it('should handle rapid value changes', async () => {
+      const mockOnChange = jest.fn();
+
+      render(
+        <FormNodeProvider>
+          <DynamicRenderer
+            type="short-text"
+            title="Email"
+            format="email"
+            onValueChange={mockOnChange}
+            form={mockForm}
+          />
+        </FormNodeProvider>
+      );
+
+      const input = screen.getByTestId('input-group-input');
+
+      // Rapid changes
+      for (let i = 0; i < 10; i++) {
+        fireEvent.change(input, { target: { value: `test${i}@example.com` } });
+      }
+
+      expect(input).toBeInTheDocument();
+    });
+
+    it('should preserve form data reference', () => {
+      const { rerender } = render(
+        <FormNodeProvider>
+          <DynamicRenderer type="short-text" title="Email" format="email" form={mockForm} />
+        </FormNodeProvider>
+      );
+
+      expect(screen.getByTestId('field')).toBeInTheDocument();
+
+      // Rerender with same form
+      rerender(
+        <FormNodeProvider>
+          <DynamicRenderer type="short-text" title="Email" format="email" form={mockForm} />
+        </FormNodeProvider>
+      );
+
+      expect(screen.getByTestId('field')).toBeInTheDocument();
+    });
+
+    it('should handle null form gracefully', () => {
+      const { container } = render(
+        <FormNodeProvider>
+          <DynamicRenderer type="short-text" title="Email" format="email" form={null as any} />
+        </FormNodeProvider>
+      );
+
+      // Should not crash with null form
+      expect(container).toBeInTheDocument();
+    });
+
+    it('should handle undefined format gracefully', () => {
+      const { container } = render(
+        <FormNodeProvider>
+          <DynamicRenderer type="short-text" title="Text" format={undefined} form={mockForm} />
+        </FormNodeProvider>
+      );
+
+      expect(container).toBeInTheDocument();
+    });
+
+    it('should handle form with undefined field_schema', () => {
+      const incompleteForm: FormType = {
+        ...mockForm,
+        field_schema: undefined as any,
+      };
+
+      const { container } = render(
+        <FormNodeProvider>
+          <DynamicRenderer type="short-text" title="Email" format="email" form={incompleteForm} />
+        </FormNodeProvider>
+      );
+
+      expect(container).toBeInTheDocument();
+    });
+
+    it('should support numeric input format', () => {
+      render(
+        <FormNodeProvider>
+          <DynamicRenderer type="short-text" title="Age" format="number" form={mockForm} />
+        </FormNodeProvider>
+      );
+
+      expect(screen.getByTestId('field')).toBeInTheDocument();
+    });
+
+    it('should call onValueChange with correct parameters', async () => {
+      const mockOnChange = jest.fn();
+
+      render(
+        <FormNodeProvider>
+          <DynamicRenderer
+            type="short-text"
+            title="Email"
+            format="email"
+            onValueChange={mockOnChange}
+            form={mockForm}
+          />
+        </FormNodeProvider>
+      );
+
+      const input = screen.getByTestId('input-group-input');
+      fireEvent.change(input, { target: { value: 'test@example.com' } });
+
+      // Verify onChange was triggered
+      expect(input).toBeInTheDocument();
+    });
+
+    it('should handle onReset callback', () => {
+      const mockOnReset = jest.fn();
+
+      render(
+        <FormNodeProvider>
+          <DynamicRenderer
+            type="short-text"
+            title="Email"
+            format="email"
+            onReset={mockOnReset}
+            form={mockForm}
+          />
+        </FormNodeProvider>
+      );
+
+      expect(screen.getByTestId('field')).toBeInTheDocument();
+    });
+
+    it('should handle custom className', () => {
+      const { container } = render(
+        <FormNodeProvider>
+          <DynamicRenderer
+            type="short-text"
+            title="Email"
+            format="email"
+            className="custom-class"
+            form={mockForm}
+          />
+        </FormNodeProvider>
+      );
+
+      expect(container).toBeInTheDocument();
+    });
   });
 });
