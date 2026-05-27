@@ -38,7 +38,7 @@ export default function GraphContent() {
         }
 
         const graphData = await response.json();
-        setGraphData(graphData);
+        setGraphData(graphData?.data || null);
       } catch (error) {
         console.error('Failed to fetch graph data:', error);
       }

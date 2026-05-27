@@ -11,8 +11,14 @@ export async function GET(_req: Request) {
 
     const fileContent = readFileSync(filePath, 'utf-8');
     const data = JSON.parse(fileContent);
+    const res = {
+      data,
+      success: true,
+      error: null,
+      message: 'Graph data fetched successfully',
+    };
 
-    return Response.json(data, {
+    return Response.json(res, {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -20,6 +26,16 @@ export async function GET(_req: Request) {
     const error = err instanceof Error ? err.message : String(err);
     console.error('Failed to fetch graph data:', error);
 
-    return Response.json({ error: 'Failed to load graph data' }, { status: 404 });
+    const res = {
+      data: null,
+      success: false,
+      error: error,
+      message: 'Failed to fetch graph data',
+    };
+
+    return Response.json(res, {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
